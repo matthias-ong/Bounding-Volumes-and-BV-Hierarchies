@@ -1,0 +1,15 @@
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/CMakeFiles/uninstall.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/CMakeFiles/UpdateAssimpLibsDebugSymbolsAndDLLs.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/CMakeFiles/INSTALL.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/CMakeFiles/ALL_BUILD.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/CMakeFiles/ZERO_CHECK.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/contrib/zlib/CMakeFiles/zlibstatic.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/contrib/zlib/CMakeFiles/INSTALL.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/contrib/zlib/CMakeFiles/ALL_BUILD.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/code/CMakeFiles/assimp.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/code/CMakeFiles/INSTALL.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/tools/assimp_cmd/CMakeFiles/assimp_cmd.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/tools/assimp_cmd/CMakeFiles/INSTALL.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/test/CMakeFiles/unit.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/test/CMakeFiles/INSTALL.dir
+C:/Users/2001714/Desktop/assimp-5.2.3/build/x64/test/headercheck/CMakeFiles/INSTALL.dir
