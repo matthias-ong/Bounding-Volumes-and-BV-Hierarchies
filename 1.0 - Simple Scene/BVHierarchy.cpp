@@ -1,4 +1,5 @@
 #include "BVHierarchy.h"
+#define MEDIAN_CUT
 
 namespace BVHierarchy
 {
@@ -111,9 +112,15 @@ namespace BVHierarchy
 
 	int PartitionObjects(GameObject* objects[], int numObjects)
 	{
+#ifdef MEDIAN_CUT
+		if (numObjects % 2)
+			return numObjects / 2.f + 1; //MEDIAN SPLIT
+		return numObjects / 2.f;
+#else //HEURISTIC SPLIT: Find the best split point
 		float split = 0;
 		float minCost = FLT_MAX;
-		for (int i = 1; i < numObjects; ++i)
+
+		for (int i = 1; i < numObjects; ++i) 
 		{
 			//possible split combinations
 			//index 0 and 1 to numObjects - 1;
@@ -129,6 +136,7 @@ namespace BVHierarchy
 				
 		}
 		return split;
+#endif
 	}
 
 	//void RenderTopDownBVTree(Node** tree)

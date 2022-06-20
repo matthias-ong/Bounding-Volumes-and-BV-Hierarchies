@@ -112,7 +112,7 @@ int SimpleScene_Quad::Init()
 
 	//Initialise game objects
 	GameObject first;
-	first.SetTransform(Transform(glm::vec3{ -3.f, 0.f, -2.f }, 1.f));
+	first.SetTransform(Transform(glm::vec3{ -4.f, -1.f, -2.f }, 1.f));
 	first.SetModelID("4Sphere"); //Sphere object
 	gameObjList.push_back(first);
 	first.m_id = 0; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
@@ -124,16 +124,34 @@ int SimpleScene_Quad::Init()
 	second.m_id = 1; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
 
 	GameObject third;
-	third.SetTransform(Transform(glm::vec3{ -2.f, 2.5f, -4.f }, 1.f));
+	third.SetTransform(Transform(glm::vec3{ -2.f, 0.f, -4.f }, 1.f));
 	third.SetModelID("StarWars"); //Sphere object
 	gameObjList.push_back(third);
 	third.m_id = 2; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
 
 	GameObject fourth;
-	fourth.SetTransform(Transform(glm::vec3{ 2.f, 2.5f, -4.5f }, 1.f));
+	fourth.SetTransform(Transform(glm::vec3{ 1.f, 2.5f, -4.5f }, 1.f));
 	fourth.SetModelID("LucyPrinceton"); //Sphere object
 	gameObjList.push_back(fourth);
 	fourth.m_id = 3; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
+
+	GameObject fifth;
+	fifth.SetTransform(Transform(glm::vec3{ 4.f, 4.5f, -5.5f }, 1.f));
+	fifth.SetModelID("StarWars"); //Sphere object
+	gameObjList.push_back(fifth);
+	fifth.m_id = 4; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
+
+	GameObject sixth;
+	sixth.SetTransform(Transform(glm::vec3{ -4.f, 1.5f, -6.f }, 1.f));
+	sixth.SetModelID("LucyPrinceton"); //Sphere object
+	gameObjList.push_back(sixth);
+	sixth.m_id = 5; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
+
+	GameObject seventh;
+	seventh.SetTransform(Transform(glm::vec3{ 0.f, -2.5f, -3.5f }, 1.f));
+	seventh.SetModelID("Bunny"); //Sphere object
+	gameObjList.push_back(seventh);
+	seventh.m_id = 6; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders("Common/shaders/DiffuseShader.vert",
@@ -608,7 +626,7 @@ int SimpleScene_Quad::Render()
 	{
 		if (tree == nullptr)
 		{
-			char axis = BVHierarchy::FindLargestAxis(BVHObjs, 4); //Choose the split plane
+			char axis = BVHierarchy::FindLargestAxis(BVHObjs, 7); //Choose the split plane
 			if (axis == 'x')
 				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareX);
 			else if (axis == 'y')
@@ -616,7 +634,7 @@ int SimpleScene_Quad::Render()
 			else // z axis
 				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareZ);
 			tree = new BVHierarchy::Node*;
-			BVHierarchy::TopDownBVTree(tree, BVHObjs, 4, 0);
+			BVHierarchy::TopDownBVTree(tree, BVHObjs, 7, 0);
 		}
 		else
 		{
