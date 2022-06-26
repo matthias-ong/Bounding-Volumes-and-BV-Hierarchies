@@ -626,7 +626,7 @@ int SimpleScene_Quad::Render()
 	{
 		if (tree == nullptr)
 		{
-			char axis = BVHierarchy::FindLargestAxis(BVHObjs, 7); //Choose the split plane
+			char axis = BVHierarchy::FindLargestAxis(BVHObjs); //Choose the split plane
 			if (axis == 'x')
 				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareX);
 			else if (axis == 'y')
@@ -634,7 +634,7 @@ int SimpleScene_Quad::Render()
 			else // z axis
 				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareZ);
 			tree = new BVHierarchy::Node*;
-			BVHierarchy::TopDownBVTree(tree, BVHObjs, 7, 0);
+			BVHierarchy::TopDownBVTree(tree, BVHObjs, 0, 6, 0);
 		}
 		else
 		{

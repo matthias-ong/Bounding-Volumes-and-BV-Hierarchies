@@ -22,14 +22,14 @@ namespace BVHierarchy
 
 		Node* lChild{}, * rChild{}; // Child node pointers
 	};
-	char FindLargestAxis(GameObject* objects[], int numObjects);
+	char FindLargestAxis(std::vector<GameObject*>& objects);
 
-	Collision::AABB ComputeBoundingVolume(GameObject* objects[], int numObjects);
+	Collision::AABB ComputeBoundingVolume(std::vector<GameObject*>& objects, int startIndex, int numObjects);
 	// Construct a top-down tree. Rearranges object[] array during construction
-	void TopDownBVTree(Node** tree, GameObject* objects[], int numObjects, int depth);
+	void TopDownBVTree(Node** tree, std::vector<GameObject*>& objects, int startIndex, int endIndex, int depth);
 	
-	float GetHeuristicCost(GameObject* objects[], int startIndex, int endIndex);
-	int PartitionObjects(GameObject* objects[], int numObjects);
+	float GetHeuristicCost(std::vector<GameObject*>& objects, int startIndex, int split, int endIndex);
+	int PartitionObjects(std::vector<GameObject*>& objects, int startIndex, int endIndex);
 
 	//void RenderTopDownBVTree(Node** tree);
 }

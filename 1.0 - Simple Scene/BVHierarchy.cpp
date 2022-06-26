@@ -18,12 +18,12 @@ namespace BVHierarchy
 		return a->transform.Position.z < b->transform.Position.z;
 	}
 
-	char FindLargestAxis(GameObject* objects[], int numObjects) //decides the split plane
+	char FindLargestAxis(std::vector<GameObject*>& objects) //decides the split plane
 	{
-		float minX = FLT_MAX, maxX = FLT_MIN;
-		float minY = FLT_MAX, maxY = FLT_MIN;
-		float minZ = FLT_MAX, maxZ = FLT_MIN;
-		for (int i = 0; i < numObjects; ++i)
+		float minX = FLT_MAX, maxX = -FLT_MAX;
+		float minY = FLT_MAX, maxY = -FLT_MAX;
+		float minZ = FLT_MAX, maxZ = -FLT_MAX;
+		for (int i = 0; i < objects.size(); ++i)
 		{
 			if (objects[i]->transform.Position.x < minX) minX = objects[i]->transform.Position.x;
 			if (objects[i]->transform.Position.y < minY) minY = objects[i]->transform.Position.y;
@@ -44,12 +44,12 @@ namespace BVHierarchy
 		else return 'z';
 	}
 	//AABB Method
-	Collision::AABB ComputeBoundingVolume(GameObject* objects[], int numObjects)
+	Collision::AABB ComputeBoundingVolume(std::vector<GameObject*>& objects, int startIndex, int numObjects)
 	{
-		assert(numObjects > 0);
-		glm::vec3 Min = objects[0]->transform.Position + objects[0]->aabbBV.m_Min;
-		glm::vec3 Max = objects[0]->transform.Position + objects[0]->aabbBV.m_Max;
-		for (int i = 1; i < numObjects; ++i)
+		//assert(numObjects > 0);
+		glm::vec3 Min = objects[startIndex]->transform.Position + objects[startIndex]->aabbBV.m_Min;
+		glm::vec3 Max = objects[startIndex]->transform.Position + objects[startIndex]->aabbBV.m_Max;
+		for (int i = startIndex + 1; i <= numObjects; ++i)
 		{
 			if (Min.x > objects[i]->transform.Position.x + objects[i]->aabbBV.m_Min.x) 
 				Min.x = objects[i]->transform.Position.x + objects[i]->aabbBV.m_Min.x;
@@ -67,19 +67,21 @@ namespace BVHierarchy
 		return Collision::AABB(Min, Max);
 	}
 
-	void TopDownBVTree(Node** tree, GameObject* objects[], int numObjects, int depth)
+	void TopDownBVTree(Node** tree, std::vector<GameObject*>& objects, int startIndex, int endIndex, int depth)
 	{
-		assert(numObjects > 0);
+		int numObjects = endIndex - startIndex + 1;
+		//if (startIndex == endIndex)
+		//	numObjects = 1;
 		const int MIN_OBJECTS_PER_LEAF = 1;
 		Node* pNode = new Node;
 		*tree = pNode;
 		// Compute a bounding volume for object[split], ..., object[numObjects - 1]
-		pNode->BV_AABB = ComputeBoundingVolume(&objects[0], numObjects);
+		pNode->BV_AABB = ComputeBoundingVolume(objects, startIndex, endIndex);
 
 		if (numObjects <= MIN_OBJECTS_PER_LEAF) {
 			pNode->type = Node::Type::LEAF;
 			pNode->numObjects = numObjects;
-			pNode->data = objects[0]; // Pointer to first object in leaf
+			pNode->data = objects[startIndex]; // Pointer to first object in leaf
 			pNode->treeDepth = depth;
 		}
 		else {
@@ -87,47 +89,49 @@ namespace BVHierarchy
 			pNode->treeDepth = depth;
 			// Based on some partitioning strategy, arrange objects into
 			// two partitions: object[0..k], and object[k+1..numObjects-1]
-			int k = PartitionObjects(objects, numObjects);
+			int k = PartitionObjects(objects, startIndex, endIndex);
 			// Recursively construct left and right subtree from subarrays and
 			// point the left and right fields of the current node at the subtrees
-			TopDownBVTree(&(pNode->lChild), objects, k, depth + 1);
-			TopDownBVTree(&(pNode->rChild), &objects[k], numObjects - k, depth + 1);
+			TopDownBVTree(&(pNode->lChild), objects, startIndex, k, depth + 1);
+			TopDownBVTree(&(pNode->rChild), objects, k + 1, endIndex, depth + 1);
 		}
 	}
 
 	//Chosen Heuristic: minimise total volume occupied by child nodes (volume proportional to SA)
-	float GetHeuristicCost(GameObject* objects[], // the array of objects
+	float GetHeuristicCost(std::vector<GameObject*>& objects, // the array of objects
+		int startIndex, 
 		int split, // the index to split into left & right
 		int numObjects) // the total number of objects
 	{
 		/*Collision::AABB parentAABB = ComputeBoundingVolume(&objects[0], numObjects);
 		float parentSurfaceArea = parentAABB.GetSurfaceArea();*/
-		Collision::AABB leftAABB = ComputeBoundingVolume(&objects[0], split);
+		Collision::AABB leftAABB = ComputeBoundingVolume(objects, startIndex, split);
 		float leftSurfaceArea = leftAABB.GetSurfaceArea();
-		Collision::AABB rightAABB = ComputeBoundingVolume(&objects[split], numObjects - split);
+		Collision::AABB rightAABB = ComputeBoundingVolume(objects, numObjects - split, numObjects);
 		float rightSurfaceArea = rightAABB.GetSurfaceArea();
 		return (split * leftSurfaceArea) +
 			((numObjects - split) * rightSurfaceArea);
 	}
 
-	int PartitionObjects(GameObject* objects[], int numObjects)
+	int PartitionObjects(std::vector<GameObject*>& objects, int startIndex, int endIndex)
 	{
+		int numObjects = endIndex - startIndex;
 #ifdef MEDIAN_CUT
-		if (numObjects % 2)
-			return numObjects / 2.f + 1; //MEDIAN SPLIT
-		return numObjects / 2.f;
+		//if (numObjects % 2)
+		//	return startIndex + numObjects / 2.f + 1; 
+		return startIndex + numObjects / 2.f; //MEDIAN SPLIT
 #else //HEURISTIC SPLIT: Find the best split point
 		float split = 0;
 		float minCost = FLT_MAX;
 
-		for (int i = 1; i < numObjects; ++i) 
+		for (int i = startIndex + 1; i < numberOfObjects; ++i)
 		{
 			//possible split combinations
 			//index 0 and 1 to numObjects - 1;
 			//index 0 to 1 AND 2 to numObjects - 1;
 			//index 0 to 2, 3 to numObjects - 1;
 			//Divide the space into two subsets
-			float cost = GetHeuristicCost(objects, i, numObjects);
+			float cost = GetHeuristicCost(objects, startIndex, i, numObjects);
 			if (cost < minCost)
 			{
 				minCost = cost; //take the lowest cost one

@@ -396,5 +396,5 @@ float Collision::AABB::GetSurfaceArea()
 	float halfExtentX = m_Max.x - m_Min.x * 0.5f;
 	float halfExtentY = m_Max.y - m_Min.y * 0.5f;
 	float halfExtentZ = m_Max.z - m_Min.z * 0.5f;
-	return 8.0f * ((halfExtentX * halfExtentY) + (halfExtentX * halfExtentZ) + (halfExtentY * halfExtentZ));
+	return abs(8.0f * ((halfExtentX * halfExtentY) + (halfExtentX * halfExtentZ) + (halfExtentY * halfExtentZ)));
 }
