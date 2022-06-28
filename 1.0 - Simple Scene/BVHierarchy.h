@@ -5,7 +5,6 @@
 
 namespace BVHierarchy
 {
-	
 	struct Node
 	{
 		enum class Type
@@ -33,7 +32,7 @@ namespace BVHierarchy
 	int PartitionObjects(std::vector<GameObject*>& objects, int startIndex, int endIndex);
 
 	Collision::Sphere RecomputeParentSphere(Collision::Sphere& parent, Collision::Sphere& lchild, Collision::Sphere& rchild);
-	//void RenderTopDownBVTree(Node** tree);
-	//bool BVH_Sphere;
+
+	int FindIndexClosestToPoint(std::vector<GameObject*>& objects, float point, int startIndex, int endIndex, char axis);
 }
 

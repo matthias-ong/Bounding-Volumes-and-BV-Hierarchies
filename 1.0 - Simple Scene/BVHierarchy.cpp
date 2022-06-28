@@ -1,6 +1,9 @@
 #include "BVHierarchy.h"
 #include "SimpleScene_Quad.h"
-#define MEDIAN_CUT
+//#define MEDIAN_CUT
+#define K_EVEN_CUTS
+
+#define K_CUTS 10.f
 
 namespace BVHierarchy
 {
@@ -71,34 +74,6 @@ namespace BVHierarchy
 
 	Collision::Sphere ComputeBoundingSphere(std::vector<GameObject*>& objects, int startIndex, int numObjects)
 	{
-		//Collision::Sphere s{ objects[startIndex]->sphereBV.m_Position ,
-		//	objects[startIndex]->sphereBV.m_Radius };
-
-		//if (numObjects - startIndex > 0)
-		//{
-		//	std::vector<GameObject*> temp;
-		//	for (int i = startIndex; i <= numObjects; ++i)
-		//	{
-		//		temp.push_back(objects[i]);
-		//	}
-		//	char axis = FindLargestAxis(temp);
-		//	if (axis == 'x')
-		//		std::sort(std::begin(temp), std::end(temp), &compareX);
-		//	else if (axis == 'y')
-		//		std::sort(std::begin(temp), std::end(temp), &compareY);
-		//	else // z axis
-		//		std::sort(std::begin(temp), std::end(temp), &compareZ);
-
-		//	glm::vec3 secondPos = temp[temp.size() - 1]->sphereBV.m_Position;
-		//	glm::vec3 dir = glm::normalize(secondPos - s.m_Position);
-
-		//	glm::vec3 min = s.m_Position - s.m_Radius * dir;
-		//	glm::vec3 max = secondPos + temp[temp.size() - 1]->sphereBV.m_Radius;
-
-		//	s.m_Position = min + 0.5f * (max - min);
-		//	s.m_Radius = 0.5f * glm::distance(min, max);
-
-		//}
 		Collision::Sphere s{ objects[startIndex]->transform.Position + objects[startIndex]->sphereBV.m_Position,
 			objects[startIndex]->sphereBV.m_Radius };
 		for (size_t i = (size_t)startIndex + 1; i <= numObjects; ++i)
@@ -107,9 +82,6 @@ namespace BVHierarchy
 			glm::vec3 dir = glm::normalize(secondPos - s.m_Position);
 
 			glm::vec3 edgeOfsecond = secondPos + objects[i]->sphereBV.m_Radius * dir;
-
-			//s.m_Position = min + 0.5f * (max - min);
-			//s.m_Radius = glm::distance(min, max) * 0.5f;
 			BoundingVolume::GrowSphere(s, edgeOfsecond);
 		}
 		return s;
@@ -190,43 +162,60 @@ namespace BVHierarchy
 		int numObjects = endIndex - startIndex;
 		float costX, costY, costZ;
 #ifdef MEDIAN_CUT
-		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex, &compareX); //'X' PLANE
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
 		costX = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
-		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex, &compareY); //'Y' PLANE
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
 		costY = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
-		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex, &compareZ); //'Z' PLANE
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareZ); //'Z' PLANE
 		costZ = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
 
 		if (costX < costY && costX < costZ)
 		{
-			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex, &compareX); //'X' PLANE
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
 		}
 		else if (costY < costX && costY < costZ)
 		{
-			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex, &compareY); //'Y' PLANE
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
 		}
 		// else already sorted in z axis
 		return startIndex + numObjects / 2.f; //MEDIAN SPLIT
-#else //HEURISTIC SPLIT: Find the best split point
-		float split = 0;
-		float minCost = FLT_MAX;
+#endif
+#ifdef K_EVEN_CUTS
+		int indexX, indexY, indexZ;
+		//first test which K-even cuts, whether along X,Y,Z axis produces smaller heuristic
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
+		float range = abs(objects[startIndex]->transform.Position.x - objects[endIndex]->transform.Position.x);
+		float splitSize = range / K_CUTS; // 10-even splits
+		float splitPointX = objects[startIndex]->transform.Position.x + splitSize * K_CUTS * 0.5f; //Middle of the K_EVEN CUTS
+		indexX = FindIndexClosestToPoint(objects, splitPointX, startIndex, endIndex, 'x');
+		costX = GetHeuristicCost(objects, startIndex, indexX, numObjects);
 
-		for (int i = startIndex + 1; i < numberOfObjects; ++i)
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
+		range = abs(objects[startIndex]->transform.Position.y - objects[endIndex]->transform.Position.y);
+		splitSize = range / K_CUTS; // 10-even splits
+		float splitPointY = objects[startIndex]->transform.Position.y + splitSize * K_CUTS * 0.5f; //Middle of the K_EVEN CUTS
+		indexY = FindIndexClosestToPoint(objects, splitPointY, startIndex, endIndex, 'y');
+		costY = GetHeuristicCost(objects, startIndex, indexY, numObjects);
+
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareZ); //'Z' PLANE
+		range = abs(objects[startIndex]->transform.Position.z - objects[endIndex]->transform.Position.z);
+		splitSize = range / K_CUTS; // 10-even splits
+		float splitPointZ = objects[startIndex]->transform.Position.z + splitSize * K_CUTS * 0.5f; //Middle of the K_EVEN CUTS
+		indexZ = FindIndexClosestToPoint(objects, splitPointZ, startIndex, endIndex, 'z');
+		costZ = GetHeuristicCost(objects, startIndex, indexZ, numObjects);
+
+		if (costX < costY && costX < costZ)
 		{
-			//possible split combinations
-			//index 0 and 1 to numObjects - 1;
-			//index 0 to 1 AND 2 to numObjects - 1;
-			//index 0 to 2, 3 to numObjects - 1;
-			//Divide the space into two subsets
-			float cost = GetHeuristicCost(objects, startIndex, i, numObjects);
-			if (cost < minCost)
-			{
-				minCost = cost; //take the lowest cost one
-				split = i; //Find the best split point
-			}
-
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
+			return indexX;
 		}
-		return split;
+		else if (costY < costX && costY < costZ)
+		{
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
+			return indexY;
+		}
+		// else already sorted in z axis
+		return indexZ; //K-EVEN SPLIT
 #endif
 	}
 
@@ -243,6 +232,28 @@ namespace BVHierarchy
 		edgeOfsecond = secondPos + rchild.m_Radius * dir;
 		BoundingVolume::GrowSphere(s, edgeOfsecond);
 		return s;
+	}
+
+	int FindIndexClosestToPoint(std::vector<GameObject*>& objects, float point, int startIndex, int endIndex, char axis)
+	{
+		float minDist = FLT_MAX;
+		int closestIndex = startIndex;
+		for (int i = startIndex; i <= endIndex ; ++i)
+		{
+			float dist = 0;
+			if (axis == 'x')
+				dist = abs(objects[i]->transform.Position.x - point);
+			else if (axis == 'y')
+				dist = abs(objects[i]->transform.Position.y - point);
+			else
+				dist = abs(objects[i]->transform.Position.z - point);
+			if (dist < minDist)
+			{
+				minDist = dist;
+				closestIndex = i;
+			}
+		}
+		return closestIndex;
 	}
 
 	//void RenderTopDownBVTree(Node** tree)
