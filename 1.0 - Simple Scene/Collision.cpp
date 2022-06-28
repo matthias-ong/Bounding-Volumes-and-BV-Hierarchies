@@ -398,3 +398,8 @@ float Collision::AABB::GetSurfaceArea()
 	float halfExtentZ = m_Max.z - m_Min.z * 0.5f;
 	return abs(8.0f * ((halfExtentX * halfExtentY) + (halfExtentX * halfExtentZ) + (halfExtentY * halfExtentZ)));
 }
+
+float Collision::Sphere::GetSurfaceArea()
+{
+	return 4.f * 3.14159f * m_Radius * m_Radius;
+}

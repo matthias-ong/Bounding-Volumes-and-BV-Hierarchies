@@ -27,6 +27,7 @@ namespace Collision
 		glm::vec3 m_Position;
 		float m_Radius;
 		Sphere(glm::vec3 pos, float radius) : m_Position{ pos }, m_Radius{ radius } {};
+		float GetSurfaceArea();
 	};
 
 	struct AABB : Collider

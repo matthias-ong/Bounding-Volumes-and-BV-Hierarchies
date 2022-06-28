@@ -11,7 +11,7 @@
 #include "Collision.h"
 #include "BoundingVolume.h"
 
-
+bool renderBVHSphere = false;
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 void SimpleScene_Quad::SetupNanoGUI(GLFWwindow* pWindow)
@@ -124,7 +124,7 @@ int SimpleScene_Quad::Init()
 	second.m_id = 1; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
 
 	GameObject third;
-	third.SetTransform(Transform(glm::vec3{ -2.f, 0.f, -4.f }, 1.f));
+	third.SetTransform(Transform(glm::vec3{ -2.f, 1.f, -4.f }, 1.f));
 	third.SetModelID("StarWars"); //Sphere object
 	gameObjList.push_back(third);
 	third.m_id = 2; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
@@ -537,14 +537,8 @@ int SimpleScene_Quad::Render()
 		gameObjList[i].SetTransform(firstTrans);
 		if (gameObjList[i].changedCollider)
 		{
-			if (gameObjList[i].colliderName == "AABB")
-			{
 				gameObjList[i].aabbBV = BoundingVolume::createAABB(models[gameObjList[i].GetModelID()].combinedVertices);
-			}
-			if (gameObjList[i].colliderName == "Ritter's Sphere")
-			{
 				gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices);
-			}
 			BVHObjs[i] = &gameObjList[i];
 			gameObjList[i].changedCollider = false;
 		}
@@ -626,15 +620,15 @@ int SimpleScene_Quad::Render()
 	{
 		if (tree == nullptr)
 		{
-			char axis = BVHierarchy::FindLargestAxis(BVHObjs); //Choose the split plane
-			if (axis == 'x')
-				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareX);
-			else if (axis == 'y')
-				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareY);
-			else // z axis
-				std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareZ);
+			//char axis = BVHierarchy::FindLargestAxis(BVHObjs); //Choose the split plane
+			//if (axis == 'x')
+			//	std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareX);
+			//else if (axis == 'y')
+			//	std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareY);
+			//else // z axis
+			//	std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareZ);
 			tree = new BVHierarchy::Node*;
-			BVHierarchy::TopDownBVTree(tree, BVHObjs, 0, 6, 0);
+			BVHierarchy::TopDownBVTree(tree, BVHObjs, 0, BVHObjs.size() - 1, 0);
 		}
 		else
 		{
@@ -696,6 +690,21 @@ int SimpleScene_Quad::Render()
 				gameObjList[3].DrawImGuiControls();
 				ImGui::PopID();
 
+				ImGui::Text("Object 5");
+				ImGui::PushID(4);
+				gameObjList[4].DrawImGuiControls();
+				ImGui::PopID();
+
+				ImGui::Text("Object 6");
+				ImGui::PushID(5);
+				gameObjList[5].DrawImGuiControls();
+				ImGui::PopID();
+
+				ImGui::Text("Object 7");
+				ImGui::PushID(6);
+				gameObjList[6].DrawImGuiControls();
+				ImGui::PopID();
+
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Bounding Volume Hierarchy"))
@@ -706,8 +715,35 @@ int SimpleScene_Quad::Render()
 					renderBV = false; //to see the leaf nodes rendering
 					runOnce = true;
 				}
-				ImGui::Text("Render Bounding Volumes");
+				ImGui::Text("Render Leaves");
 				ImGui::Checkbox("##RenderBV", &renderBV);
+				bool oldBVH = renderBVHSphere;
+				ImGui::Text("Render Sphere");
+				ImGui::Checkbox("##RenderSphere", &renderBVHSphere);
+				if (oldBVH != renderBVHSphere && tree != nullptr)
+				{
+					//new tree
+					FreeTree(*tree);
+					delete tree;
+					tree = nullptr;
+					newTree = true;
+					if (renderBVHSphere)
+					{
+						for (auto& x : gameObjList)
+						{
+							x.changedCollider = true;
+							x.colliderName = "Ritter's Sphere";
+						}
+					}
+					else
+					{
+						for (auto& x : gameObjList)
+						{
+							x.changedCollider = true;
+							x.colliderName = "AABB";
+						}
+					}
+				}
 				ImGui::Text("Render Depth");
 				ImGui::InputInt("##RenderDepth", &renderDepth);
 				if (renderDepth > 4) renderDepth = 4;
@@ -746,17 +782,33 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 		return;
 	if (node->treeDepth > renderDepth)
 		return; //dont render the deeper nodes
-	float scaleX = (node->BV_AABB.m_Max.x - node->BV_AABB.m_Min.x) * 0.5f;
-	float scaleY = (node->BV_AABB.m_Max.y - node->BV_AABB.m_Min.y) * 0.5f;
-	float scaleZ = (node->BV_AABB.m_Max.z - node->BV_AABB.m_Min.z) * 0.5f;
 
-	glm::vec3 aabbScale{ scaleX, scaleY, scaleZ };
-	glm::vec3 aabbCentre = (node->BV_AABB.m_Max + node->BV_AABB.m_Min) / 2.f;
-	Transform aabbTrans(aabbCentre, 1.f, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+	Transform aabbTrans , sphereTrans;
+	if (renderBVHSphere)
+	{
+		glm::vec3 sphereScale{ node->BV_Sphere.m_Radius, node->BV_Sphere.m_Radius, node->BV_Sphere.m_Radius };
+		Transform temp(node->BV_Sphere.m_Position, node->BV_Sphere.m_Radius, sphereScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+		sphereTrans = temp;
+	}
+	else
+	{
+		float scaleX = (node->BV_AABB.m_Max.x - node->BV_AABB.m_Min.x) * 0.5f;
+		float scaleY = (node->BV_AABB.m_Max.y - node->BV_AABB.m_Min.y) * 0.5f;
+		float scaleZ = (node->BV_AABB.m_Max.z - node->BV_AABB.m_Min.z) * 0.5f;
+
+		glm::vec3 aabbScale{ scaleX, scaleY, scaleZ };
+		glm::vec3 aabbCentre = (node->BV_AABB.m_Max + node->BV_AABB.m_Min) / 2.f;
+		Transform temp (aabbCentre, 1.f, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+		aabbTrans = temp;
+	}
+	
 
 	//gameObjs.SetTransform(aabbTrans);
-
-	glm::mat4 objTrans = projection * view * aabbTrans.GetModelMtx3f();
+	glm::mat4 objTrans;
+	if (renderBVHSphere)
+		objTrans = projection * view * sphereTrans.GetModelMtx();
+	else
+		objTrans = projection * view * aabbTrans.GetModelMtx3f();
 	GLint vTransformLoc = glGetUniformLocation(programID, "vertexTransform");
 	glUniformMatrix4fv(vTransformLoc, 1, GL_FALSE, &objTrans[0][0]);
 	glUniform1i(glGetUniformLocation(programID, "renderBoundingVolume"), true);
@@ -774,7 +826,9 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 	//	colour = glm::vec3(0.f, 0.f, 1.f);
 	glUniform3f(glGetUniformLocation(programID, "renderColour"), colour.x, colour.y, colour.z);
 	//Draw
-	models["Cube"].DrawBoundingVolume();
+	if (renderBVHSphere)
+		models["Sphere"].DrawBoundingVolume();
+	else models["Cube"].DrawBoundingVolume();
 	RenderTree(&node->lChild, projection, view);
 	RenderTree(&node->rChild, projection, view);
 }

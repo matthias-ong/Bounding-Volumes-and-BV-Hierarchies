@@ -20,7 +20,6 @@
 #include "BVHierarchy.h"
 //#include "Collision.h"
 
-
 class SimpleScene_Quad : public Scene
 {
 
@@ -69,7 +68,8 @@ private:
     BVHierarchy::Node** tree;
     bool renderBV = true, runOnce = false;
     int renderDepth = 0; 
+    
 };
 
-
+extern bool renderBVHSphere;
 #endif //SIMPLE_SCENE_SIMPLESCENE_QUAD_H

@@ -37,7 +37,6 @@ void processInput(GLFWwindow* window);
 bool savePPMImageFile(std::string& filepath, std::vector<GLfloat>& pixels, int width, int height);
 
 //////////////////////////////////////////////////////////////////////
-
 GLFWwindow* window;
 Scene* scene;
 SimpleScene_Quad* sceneQuad;
