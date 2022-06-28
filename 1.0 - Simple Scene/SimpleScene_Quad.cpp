@@ -537,8 +537,13 @@ int SimpleScene_Quad::Render()
 		gameObjList[i].SetTransform(firstTrans);
 		if (gameObjList[i].changedCollider)
 		{
-				gameObjList[i].aabbBV = BoundingVolume::createAABB(models[gameObjList[i].GetModelID()].combinedVertices);
-				gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			gameObjList[i].aabbBV = BoundingVolume::createAABB(models[gameObjList[i].GetModelID()].combinedVertices);
+			gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices); //default sphere for the sphere BVH leaves
+			if (gameObjList[i].colliderName == "PCA Sphere")
+			{
+				gameObjList[i].sphereBV = BoundingVolume::PCASphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			}
+
 			BVHObjs[i] = &gameObjList[i];
 			gameObjList[i].changedCollider = false;
 		}
@@ -598,7 +603,7 @@ int SimpleScene_Quad::Render()
 				//Draw
 				models["Cube"].DrawBoundingVolume();
 			}
-			else if (gameObjs.colliderName == "Ritter's Sphere") //spheres
+			else if (gameObjs.colliderName == "Ritter's Sphere" || gameObjs.colliderName == "PCA Sphere") //spheres
 			{
 				float sphereScale{ gameObjs.sphereBV.m_Radius };
 				Transform sphereTrans(gameObjs.sphereBV.m_Position + gameObjs.GetTransform().Position, sphereScale, { sphereScale, sphereScale, sphereScale }, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
@@ -632,7 +637,7 @@ int SimpleScene_Quad::Render()
 		}
 		else
 		{
-			if (!newTree) 
+			if (!newTree)
 				newTree = true;
 			RenderTree(tree, projection, view);
 		}
@@ -776,14 +781,14 @@ int SimpleScene_Quad::postRender()
 
 void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& projection, const glm::mat4& view)
 {
-	
+
 	BVHierarchy::Node* node = *tree;
 	if (node == nullptr)
 		return;
 	if (node->treeDepth > renderDepth)
 		return; //dont render the deeper nodes
 
-	Transform aabbTrans , sphereTrans;
+	Transform aabbTrans, sphereTrans;
 	if (renderBVHSphere)
 	{
 		glm::vec3 sphereScale{ node->BV_Sphere.m_Radius, node->BV_Sphere.m_Radius, node->BV_Sphere.m_Radius };
@@ -798,10 +803,10 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 
 		glm::vec3 aabbScale{ scaleX, scaleY, scaleZ };
 		glm::vec3 aabbCentre = (node->BV_AABB.m_Max + node->BV_AABB.m_Min) / 2.f;
-		Transform temp (aabbCentre, 1.f, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+		Transform temp(aabbCentre, 1.f, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
 		aabbTrans = temp;
 	}
-	
+
 
 	//gameObjs.SetTransform(aabbTrans);
 	glm::mat4 objTrans;
@@ -814,7 +819,7 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 	glUniform1i(glGetUniformLocation(programID, "renderBoundingVolume"), true);
 	glm::vec3 colour = glm::vec3(1.f, 0.f, 0.f);
 
-	if(node->treeDepth == 1)
+	if (node->treeDepth == 1)
 		colour = glm::vec3(0.f, 0.f, 1.f);
 	else if (node->treeDepth == 2)
 		colour = glm::vec3(0.f, 1.f, 1.f);

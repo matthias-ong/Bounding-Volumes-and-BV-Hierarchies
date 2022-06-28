@@ -1,4 +1,4 @@
-#include "BoundingVolume.h"
+﻿#include "BoundingVolume.h"
 
 namespace BoundingVolume
 {
@@ -101,12 +101,158 @@ namespace BoundingVolume
 		glm::vec3 centre = (extremePoints.first + extremePoints.second) * 0.5f;
 		float radius = glm::dot(extremePoints.second - centre, extremePoints.second - centre);
 		radius = sqrt(radius);
-		Collision::Sphere boundingSphere{ centre,  radius};
+		Collision::Sphere boundingSphere{ centre,  radius };
 
 		// Grow sphere to include all points (STEP 2)
 		for (auto& v : vertices)
 			GrowSphere(boundingSphere, v);
 
 		return boundingSphere;
+	}
+
+	void CovarianceMatrix(glm::mat3& cov, std::vector<glm::vec3>& vertices)
+	{
+		float oon = 1.0f / (float)vertices.size();
+		glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
+		float e00, e11, e22, e01, e02, e12;
+		// Compute the center of mass (centroid) of the points
+		for (int i = 0; i < vertices.size(); i++)
+			c += vertices[i];
+		c *= oon;
+
+		// Compute covariance elements
+		e00 = e11 = e22 = e01 = e02 = e12 = 0.0f;
+		for (int i = 0; i < vertices.size(); i++) {
+			// Translate points so center of mass is at origin
+			glm::vec3 p = vertices[i] - c;
+			// Compute covariance of translated points
+			e00 += p.x * p.x;
+			e11 += p.y * p.y;
+			e22 += p.z * p.z;
+			e01 += p.x * p.y;
+			e02 += p.x * p.z;
+			e12 += p.y * p.z;
+		}
+		// Fill in the covariance matrix elements
+		cov[0][0] = e00 * oon;
+		cov[1][1] = e11 * oon;
+		cov[2][2] = e22 * oon;
+		cov[0][1] = cov[1][0] = e01 * oon;
+		cov[0][2] = cov[2][0] = e02 * oon;
+		cov[1][2] = cov[2][1] = e12 * oon;
+	}
+
+	// 2-by-2 Symmetric Schur decomposition. Given an n-by-n symmetric matrix
+	// and indices p, q such that 1 <= p < q <= n, computes a sine-cosine pair
+	// (s, c) that will serve to form a Jacobi rotation matrix.
+	// See Golub, Van Loan, Matrix Computations, 3rd ed, p428
+	void SymSchur2(glm::mat3& a, int p, int q, float& c, float& s)
+	{
+		if (abs(a[p][q]) > 0.0001f) {
+			float r = (a[q][q] - a[p][p]) / (2.0f * a[p][q]);
+			float t;
+			if (r >= 0.0f)
+				t = 1.0f / (r + sqrt(1.0f + r * r));
+			else
+				t = -1.0f / (-r + sqrt(1.0f + r * r));
+			c = 1.0f / sqrt(1.0f + t * t);
+			s = t * c;
+		}
+		else {
+			c = 1.0f;
+			s = 0.0f;
+		}
+	}
+
+	// Computes the eigenvectors and eigenvalues of the symmetric matrix A using
+	// the classic Jacobi method of iteratively updating A asA=J∧T * A * J,
+	// where J = J(p, q, theta) is the Jacobi rotation matrix.
+	//
+	// On exit, v will contain the eigenvectors, and the diagonal elements
+	// of a are the corresponding eigenvalues.
+	//
+	// See Golub, Van Loan, Matrix Computations, 3rd ed, p428
+	void Jacobi(glm::mat3& a, glm::mat3& v)
+	{
+		int i, j, n, p, q;
+		float prevoff, c, s;
+		glm::mat3 J, b, t;
+		// Initialize v to identify matrix
+		for (i = 0; i < 3; i++) {
+			v[i][0] = v[i][1] = v[i][2] = 0.0f;
+			v[i][i] = 1.0f;
+		}
+		// Repeat for some maximum number of iterations
+		const int MAX_ITERATIONS = 50;
+		for (n = 0; n < MAX_ITERATIONS; n++) {
+			// Find largest off-diagonal absolute element a[p][q]
+			p = 0; q = 1;
+			for (i = 0; i < 3; i++) {
+				for (j = 0; j < 3; j++) {
+					if (i == j) continue;
+					if (abs(a[i][j]) > abs(a[p][q])) {
+						p = i;
+						q = j;
+					}
+				}
+			}
+			// Compute the Jacobi rotation matrix J(p, q, theta)
+			// (This code can be optimized for the three different cases of rotation)
+			SymSchur2(a, p, q, c, s);
+			for (i = 0; i < 3; i++) {
+				J[i][0] = J[i][1] = J[i][2] = 0.0f;
+				J[i][i] = 1.0f;
+			}
+			J[p][p] = c; J[p][q] = s;
+			J[q][p] = -s; J[q][q] = c;
+			// Cumulate rotations into what will contain the eigenvectors
+			v = v * J;
+			// Make ’a’ more diagonal, until just eigenvalues remain on diagonal
+			a = (glm::transpose(J) * a) * J;
+			// Compute "norm" of off-diagonal elements
+			float off = 0.0f;
+			for (i = 0; i < 3; i++) {
+				for (j = 0; j < 3; j++) {
+					if (i == j) continue;
+					off += a[i][j] * a[i][j];
+				}
+			}
+			/* off = sqrt(off); not needed for norm comparison */
+			// Stop when norm no longer decreasing
+			if (n > 2 && off >= prevoff)
+				return;
+			prevoff = off;
+
+		}
+	}
+	Collision::Sphere PCASphere(std::vector<glm::vec3>& vertices)
+	{
+		glm::mat3 m, v;
+		// Compute the covariance matrix m
+		CovarianceMatrix(m, vertices);
+		// Decompose it into eigenvectors (in v) and eigenvalues (in m)
+		Jacobi(m, v);
+		// Find the component with largest magnitude eigenvalue (largest spread)
+		glm::vec3 e;
+		int maxc = 0;
+		float maxf, maxe = abs(m[0][0]);
+		if ((maxf = abs(m[1][1])) > maxe) maxc = 1, maxe = maxf;
+		if ((maxf = abs(m[2][2])) > maxe) maxc = 2, maxe = maxf;
+		e[0] = v[0][maxc];
+		e[1] = v[1][maxc];
+		e[2] = v[2][maxc];
+		// Find the most extreme points along direction ’e’
+		int imin, imax;
+		std::pair<glm::vec3, glm::vec3> result = extremePointsAlongDirection(e, vertices);
+		glm::vec3 minpt = result.first;
+		glm::vec3 maxpt = result.second;
+		float dist = sqrt(glm::dot(maxpt - minpt, maxpt - minpt));
+		Collision::Sphere eigenSphere{ (minpt + maxpt) * 0.5f, dist * 0.5f };
+
+		// Grow sphere to include all points (STEP 2)
+		for (auto& v : vertices)
+			GrowSphere(eigenSphere, v);
+
+		return eigenSphere;
 	}
 }

@@ -3,7 +3,7 @@
 //#define MEDIAN_CUT
 #define K_EVEN_CUTS
 
-#define K_CUTS 10.f
+#define K_CUTS 10.f //10-even SPLIT
 
 namespace BVHierarchy
 {
