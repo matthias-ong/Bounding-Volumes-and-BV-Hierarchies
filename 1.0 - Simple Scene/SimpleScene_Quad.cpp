@@ -154,6 +154,12 @@ int SimpleScene_Quad::Init()
 	gameObjList.push_back(seventh);
 	seventh.m_id = 6; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
 
+	GameObject eighth;
+	eighth.SetTransform(Transform(glm::vec3{ 3.f, 1.5f, -2.5f }, 1.f));
+	eighth.SetModelID("4Sphere"); //Sphere object
+	gameObjList.push_back(eighth);
+	eighth.m_id = 6; //Make sure it corresponds to the index of the gameObjList. Can use std::find.
+
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders("Common/shaders/DiffuseShader.vert",
 		"Common/shaders/DiffuseShader.frag");
@@ -709,6 +715,11 @@ int SimpleScene_Quad::Render()
 				ImGui::Text("Object 7");
 				ImGui::PushID(6);
 				gameObjList[6].DrawImGuiControls();
+				ImGui::PopID();
+
+				ImGui::Text("Object 8");
+				ImGui::PushID(7);
+				gameObjList[7].DrawImGuiControls();
 				ImGui::PopID();
 
 				ImGui::EndTabItem();

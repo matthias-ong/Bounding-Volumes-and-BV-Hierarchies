@@ -179,7 +179,7 @@ namespace BVHierarchy
 			// else already sorted in z axis
 			return startIndex + numObjects / 2.f; //MEDIAN SPLIT
 		}
-		else if (indexOfTreeInt == (int)Tree::TOP_DOWN_10_EVEN_SPLIT)
+		else if (indexOfTreeInt == (int)Tree::TOP_DOWN_K_EVEN_SPLIT)
 		{
 			int indexX, indexY, indexZ;
 			//first test which K-even cuts, whether along X,Y,Z axis produces smaller heuristic

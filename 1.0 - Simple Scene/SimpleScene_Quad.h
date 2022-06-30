@@ -61,7 +61,7 @@ private:
     bool show_demo_window = false;
     bool show_control_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    std::vector<GameObject*> BVHObjs{ 7 };
+    std::vector<GameObject*> BVHObjs{ 8 };
     //GameObject* BVHObjs[7];
     bool BVHenabled;
     bool newTree = true;
