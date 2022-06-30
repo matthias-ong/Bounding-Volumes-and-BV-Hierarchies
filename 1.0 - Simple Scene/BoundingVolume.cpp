@@ -255,4 +255,45 @@ namespace BoundingVolume
 
 		return eigenSphere;
 	}
+	std::pair<float, float> getExtents(GameObject* obj, char axis, bool renderSphere)
+	{
+		std::pair<float, float> result;
+		if (renderSphere == false) // get AABB extents
+		{
+			if (axis == 'x')
+			{
+				result.first = obj->transform.Position.x - obj->aabbBV.m_Min.x;
+				result.second = obj->transform.Position.x + obj->aabbBV.m_Max.x;
+			}
+			else if (axis == 'y')
+			{
+				result.first = obj->transform.Position.y - obj->aabbBV.m_Min.y;
+				result.second = obj->transform.Position.y + obj->aabbBV.m_Max.y;
+			}
+			else if (axis == 'z')
+			{
+				result.first = obj->transform.Position.z - obj->aabbBV.m_Min.z;
+				result.second = obj->transform.Position.z + obj->aabbBV.m_Max.z;
+			}
+		}
+		else
+		{
+			if (axis == 'x')
+			{
+				result.first = (obj->transform.Position + obj->sphereBV.m_Position - obj->sphereBV.m_Radius * glm::vec3(1.f, 0.f, 0.f)).x;
+				result.second = (obj->transform.Position + obj->sphereBV.m_Position + obj->sphereBV.m_Radius * glm::vec3(1.f, 0.f, 0.f)).x;
+			}
+			if (axis == 'y')
+			{
+				result.first = (obj->transform.Position + obj->sphereBV.m_Position - obj->sphereBV.m_Radius * glm::vec3(0.f, 1.f, 0.f)).y;
+				result.second = (obj->transform.Position + obj->sphereBV.m_Position + obj->sphereBV.m_Radius * glm::vec3(0.f, 1.f, 0.f)).y;
+			}
+			if (axis == 'z')
+			{
+				result.first = (obj->transform.Position + obj->sphereBV.m_Position - obj->sphereBV.m_Radius * glm::vec3(0.f, 0.f, 1.f)).z;
+				result.second = (obj->transform.Position + obj->sphereBV.m_Position + obj->sphereBV.m_Radius * glm::vec3(0.f, 0.f, 1.f)).z;
+			}
+		}
+		return result;
+	}
 }

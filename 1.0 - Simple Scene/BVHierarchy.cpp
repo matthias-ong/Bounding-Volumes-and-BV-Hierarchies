@@ -1,7 +1,8 @@
 #include "BVHierarchy.h"
 #include "SimpleScene_Quad.h"
 //#define MEDIAN_CUT
-#define K_EVEN_CUTS
+//#define K_EVEN_CUT
+#define MEDIAN_EXT_CUT
 
 #define K_CUTS 10.f //10-even SPLIT
 
@@ -180,7 +181,7 @@ namespace BVHierarchy
 		// else already sorted in z axis
 		return startIndex + numObjects / 2.f; //MEDIAN SPLIT
 #endif
-#ifdef K_EVEN_CUTS
+#ifdef K_EVEN_CUT
 		int indexX, indexY, indexZ;
 		//first test which K-even cuts, whether along X,Y,Z axis produces smaller heuristic
 		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
@@ -216,6 +217,56 @@ namespace BVHierarchy
 		}
 		// else already sorted in z axis
 		return indexZ; //K-EVEN SPLIT
+#endif
+#ifdef MEDIAN_EXT_CUT
+		if (endIndex - startIndex <= 1)
+			return startIndex;
+		int indexX, indexY, indexZ;
+		std::vector<float> extents;
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
+		for (int i = startIndex; i <= endIndex; ++i)
+		{
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'x');
+			extents.emplace_back(extent.first);
+			extents.emplace_back(extent.second);
+		}
+		indexX = FindIndexClosestToPoint(objects, extents[(extents.size() - 1)/2.f], startIndex, endIndex, 'x');
+		costX = GetHeuristicCost(objects, startIndex, indexX, numObjects);
+
+		extents.clear();
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
+		for (int i = startIndex; i <= endIndex; ++i)
+		{
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'y');
+			extents.emplace_back(extent.first);
+			extents.emplace_back(extent.second);
+		}
+		indexY = FindIndexClosestToPoint(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'y');
+		costY = GetHeuristicCost(objects, startIndex, indexY, numObjects);
+
+		extents.clear();
+		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareZ); //'Z' PLANE
+		for (int i = startIndex; i <= endIndex; ++i)
+		{
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'z');
+			extents.emplace_back(extent.first);
+			extents.emplace_back(extent.second);
+		}
+		indexZ = FindIndexClosestToPoint(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'z');
+		costZ = GetHeuristicCost(objects, startIndex, indexZ, numObjects);
+
+		if (costX < costY && costX < costZ)
+		{
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
+			return indexX;
+		}
+		else if (costY < costX && costY < costZ)
+		{
+			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
+			return indexY;
+		}
+		// else already sorted in z axis
+		return indexZ;
 #endif
 	}
 

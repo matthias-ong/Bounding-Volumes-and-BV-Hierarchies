@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "Collision.h"
+#include "GameObject.h"
 
 namespace BoundingVolume
 {
@@ -20,5 +21,7 @@ namespace BoundingVolume
 	void SymSchur2(glm::mat3& a, int p, int q, float& c, float& s);
 	void Jacobi(glm::mat3& a, glm::mat3& v);
 	Collision::Sphere PCASphere(std::vector<glm::vec3>& vertices);
+
+	std::pair<float, float> getExtents(GameObject* obj, char axis, bool renderSphere = false);
 };
 
