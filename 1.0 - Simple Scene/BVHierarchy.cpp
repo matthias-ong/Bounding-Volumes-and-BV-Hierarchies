@@ -349,13 +349,12 @@ namespace BVHierarchy
 				}
 			}
 
-			if (dist < minDist)
+			if (dist == 0.f)
 			{
-				minDist = dist;
-				closestIndex = i;
+				return i; //return first object with that extent break out of loop
 			}
 		}
-		return closestIndex;
+		return -1; //error the extents passed in do not belong to any of the objects
 	}
 
 	//void RenderTopDownBVTree(Node** tree)
