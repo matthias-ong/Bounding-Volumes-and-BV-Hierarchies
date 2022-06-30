@@ -220,40 +220,40 @@ namespace BVHierarchy
 #endif
 #ifdef MEDIAN_EXT_CUT
 		if (endIndex - startIndex <= 1)
-			return startIndex;
+			return startIndex; //too little objects
 		int indexX, indexY, indexZ;
 		std::vector<float> extents;
 		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
 		for (int i = startIndex; i <= endIndex; ++i)
 		{
-			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'x');
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'x', renderBVHSphere);
 			extents.emplace_back(extent.first);
 			extents.emplace_back(extent.second);
 		}
 		//Find index of the gameObj with that extent
-		indexX = FindIndexClosestToPoint(objects, extents[(extents.size() - 1)/2.f], startIndex, endIndex, 'x');
+		indexX = FindIndexWithExtents(objects, extents[(extents.size() - 1)/2.f], startIndex, endIndex, 'x', renderBVHSphere);
 		costX = GetHeuristicCost(objects, startIndex, indexX, numObjects);
 
 		extents.clear();
 		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
 		for (int i = startIndex; i <= endIndex; ++i)
 		{
-			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'y');
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'y', renderBVHSphere);
 			extents.emplace_back(extent.first);
 			extents.emplace_back(extent.second);
 		}
-		indexY = FindIndexClosestToPoint(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'y');
+		indexY = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'y', renderBVHSphere);
 		costY = GetHeuristicCost(objects, startIndex, indexY, numObjects);
 
 		extents.clear();
 		std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareZ); //'Z' PLANE
 		for (int i = startIndex; i <= endIndex; ++i)
 		{
-			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'z');
+			std::pair<float, float> extent = BoundingVolume::getExtents(objects[i], 'z', renderBVHSphere);
 			extents.emplace_back(extent.first);
 			extents.emplace_back(extent.second);
 		}
-		indexZ = FindIndexClosestToPoint(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'z');
+		indexZ = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'z', renderBVHSphere);
 		costZ = GetHeuristicCost(objects, startIndex, indexZ, numObjects);
 
 		if (costX < costY && costX < costZ)
@@ -299,6 +299,56 @@ namespace BVHierarchy
 				dist = abs(objects[i]->transform.Position.y - point);
 			else
 				dist = abs(objects[i]->transform.Position.z - point);
+			if (dist < minDist)
+			{
+				minDist = dist;
+				closestIndex = i;
+			}
+		}
+		return closestIndex;
+	}
+
+	int FindIndexWithExtents(std::vector<GameObject*>& objects, float extent, int startIndex, int endIndex, char axis, bool renderSphere)
+	{
+		float minDist = FLT_MAX;
+		int closestIndex = startIndex;
+		for (int i = startIndex; i <= endIndex; ++i)
+		{
+			float dist = 0;
+			if (renderSphere)
+			{
+				if (axis == 'x')
+				{
+					dist = std::min(abs(objects[i]->transform.Position.x + objects[i]->sphereBV.m_Position.x - objects[i]->sphereBV.m_Radius - extent),
+						abs(objects[i]->transform.Position.x + objects[i]->sphereBV.m_Position.x + objects[i]->sphereBV.m_Radius - extent));
+				}
+				else if (axis == 'y')
+				{
+					dist = std::min(abs(objects[i]->transform.Position.y + objects[i]->sphereBV.m_Position.y - objects[i]->sphereBV.m_Radius - extent),
+						abs(objects[i]->transform.Position.y + objects[i]->sphereBV.m_Position.y + objects[i]->sphereBV.m_Radius - extent));
+				}
+				else
+				{
+					dist = std::min(abs(objects[i]->transform.Position.z + objects[i]->sphereBV.m_Position.z - objects[i]->sphereBV.m_Radius - extent),
+						abs(objects[i]->transform.Position.z + objects[i]->sphereBV.m_Position.z + objects[i]->sphereBV.m_Radius - extent));
+				}
+			}
+			else
+			{
+				if (axis == 'x')
+				{
+					dist = std::min(abs(objects[i]->transform.Position.x - objects[i]->aabbBV.m_Min.x - extent), abs(objects[i]->transform.Position.x + objects[i]->aabbBV.m_Max.x - extent));
+				}
+				else if (axis == 'y')
+				{
+					dist = std::min(abs(objects[i]->transform.Position.y - objects[i]->aabbBV.m_Min.y - extent), abs(objects[i]->transform.Position.y + objects[i]->aabbBV.m_Max.y - extent));
+				}
+				else
+				{
+					dist = std::min(abs(objects[i]->transform.Position.z - objects[i]->aabbBV.m_Min.z - extent), abs(objects[i]->transform.Position.z + objects[i]->aabbBV.m_Max.z - extent));
+				}
+			}
+
 			if (dist < minDist)
 			{
 				minDist = dist;

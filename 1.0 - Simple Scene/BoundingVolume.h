@@ -23,5 +23,6 @@ namespace BoundingVolume
 	Collision::Sphere PCASphere(std::vector<glm::vec3>& vertices);
 
 	std::pair<float, float> getExtents(GameObject* obj, char axis, bool renderSphere = false);
+	
 };
 

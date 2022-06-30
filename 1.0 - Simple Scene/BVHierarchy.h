@@ -34,5 +34,7 @@ namespace BVHierarchy
 	Collision::Sphere RecomputeParentSphere(Collision::Sphere& parent, Collision::Sphere& lchild, Collision::Sphere& rchild);
 
 	int FindIndexClosestToPoint(std::vector<GameObject*>& objects, float point, int startIndex, int endIndex, char axis);
+
+	int FindIndexWithExtents(std::vector<GameObject*>& objects, float extent, int startIndex, int endIndex, char axis, bool renderSphere);
 }
 
