@@ -853,8 +853,8 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 		colour = glm::vec3(1.f, 0.f, 1.f);
 	else if (node->treeDepth == 4)
 		colour = glm::vec3(1.f, 1.f, 0.f);
-	//else if (node->treeDepth == 5)
-	//	colour = glm::vec3(0.75f, 0.55f, 0.75f);
+	else if (node->treeDepth == 5)
+		colour = glm::vec3(0.75f, 0.55f, 0.75f);
 
 	//	colour = glm::vec3(0.f, 0.f, 1.f);
 	glUniform3f(glGetUniformLocation(programID, "renderColour"), colour.x, colour.y, colour.z);
