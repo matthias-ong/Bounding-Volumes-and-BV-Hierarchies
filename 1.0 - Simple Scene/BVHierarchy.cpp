@@ -1,10 +1,7 @@
 #include "BVHierarchy.h"
 #include "SimpleScene_Quad.h"
-//#define MEDIAN_CUT
-//#define K_EVEN_CUT
-#define MEDIAN_EXT_CUT
 
-#define K_CUTS 10.f //10-even SPLIT
+#define K_CUTS 10.f //10-even SPLITS
 
 namespace BVHierarchy
 {

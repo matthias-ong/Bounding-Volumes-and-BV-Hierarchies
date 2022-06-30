@@ -723,10 +723,10 @@ int SimpleScene_Quad::Render()
 				}
 				//const char* oldBV = this->colliderName;
 				int oldTree = indexOfTreeInt;
-				static const char* items[]{ "Top Down Median Split", "Top Down 10-EVEN Extents Split", "Top Down Median Extents Split" };
+				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split" };
 				//ImGui::NextColumn();
 				ImGui::ListBox("Tree", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 3);
-				if (oldTree != indexOfTreeInt)
+				if (oldTree != indexOfTreeInt && tree != nullptr)
 				{
 					//new tree
 					FreeTree(*tree);
