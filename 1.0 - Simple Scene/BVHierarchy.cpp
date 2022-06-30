@@ -230,6 +230,7 @@ namespace BVHierarchy
 			extents.emplace_back(extent.first);
 			extents.emplace_back(extent.second);
 		}
+		//Find index of the gameObj with that extent
 		indexX = FindIndexClosestToPoint(objects, extents[(extents.size() - 1)/2.f], startIndex, endIndex, 'x');
 		costX = GetHeuristicCost(objects, startIndex, indexX, numObjects);
 
