@@ -72,4 +72,6 @@ private:
 };
 
 extern bool renderBVHSphere;
+
+extern int indexOfTreeInt;
 #endif //SIMPLE_SCENE_SIMPLESCENE_QUAD_H
