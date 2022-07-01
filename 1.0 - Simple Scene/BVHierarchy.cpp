@@ -409,7 +409,7 @@ namespace BVHierarchy
 		// Free temporary storage and return root of tree
 		Node* pRoot = tempTree[0];
 		if (tempTree)
-			delete tempTree; //just delete one dimension in the array
+			delete[] tempTree;
 		*tree = pRoot;
 	}
 
