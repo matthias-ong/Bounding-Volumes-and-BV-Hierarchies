@@ -68,10 +68,11 @@ private:
     BVHierarchy::Node** tree;
     bool renderBV = true, runOnce = false;
     int renderDepth = 0; 
-    
+    bool bottomUpTree = false;
 };
 
-extern bool renderBVHSphere;
 
+//Externs for BVH
+extern bool renderBVHSphere;
 extern int indexOfTreeInt;
 #endif //SIMPLE_SCENE_SIMPLESCENE_QUAD_H

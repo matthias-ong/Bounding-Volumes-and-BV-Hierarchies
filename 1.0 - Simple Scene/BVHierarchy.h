@@ -18,6 +18,7 @@ namespace BVHierarchy
 		GameObject* data{}; // pointer to objects/BVs that the node represents
 		int numObjects{}; // How many objects in this subtree?
 		int treeDepth = 0;
+		glm::vec3 pos{}; //used only for bottom up for now
 
 		Node* lChild{}, * rChild{}; // Child node pointers
 	};
@@ -37,6 +38,15 @@ namespace BVHierarchy
 
 	int FindIndexWithExtents(std::vector<GameObject*>& objects, float extent, int startIndex, int endIndex, char axis, bool renderSphere);
 
+	void BottomUpBVTree(Node** tree, std::vector<GameObject*>& objects);
+
+	void FindNodesToMerge(Node* nodes[], int numObjs, int* indexI, int* indexJ);
+
+	Collision::AABB ComputeBoundingVolumeAABB(Node* first, Node* second);
+
+	Collision::Sphere ComputeBoundingVolumeSphere(Node* first, Node* second);
+
+	void SetBottomUpBVTreeDepth(Node* tree, int depth);
 	enum class Tree
 	{
 		TOP_DOWN_MEDIAN_SPLIT,

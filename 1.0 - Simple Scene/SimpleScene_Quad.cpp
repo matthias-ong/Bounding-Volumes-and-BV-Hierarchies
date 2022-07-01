@@ -545,11 +545,14 @@ int SimpleScene_Quad::Render()
 		if (gameObjList[i].changedCollider)
 		{
 			gameObjList[i].aabbBV = BoundingVolume::createAABB(models[gameObjList[i].GetModelID()].combinedVertices);
+			gameObjList[i].aabbBV.m_Min = gameObjList[i].transform.Position + gameObjList[i].aabbBV.m_Min;
+			gameObjList[i].aabbBV.m_Max = gameObjList[i].transform.Position + gameObjList[i].aabbBV.m_Max;
 			gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices); //default sphere for the sphere BVH leaves
 			if (gameObjList[i].colliderName == "PCA Sphere")
 			{
 				gameObjList[i].sphereBV = BoundingVolume::PCASphere(models[gameObjList[i].GetModelID()].combinedVertices);
 			}
+			gameObjList[i].sphereBV.m_Position = gameObjList[i].transform.Position + gameObjList[i].sphereBV.m_Position; //offset sphere position with gameobj position
 
 			BVHObjs[i] = &gameObjList[i];
 			gameObjList[i].changedCollider = false;
@@ -599,7 +602,7 @@ int SimpleScene_Quad::Render()
 
 				glm::vec3 aabbScale{ scaleX, scaleY, scaleZ };
 				glm::vec3 aabbCentre = (gameObjs.aabbBV.m_Max + gameObjs.aabbBV.m_Min) / 2.f;
-				Transform aabbTrans(aabbCentre + gameObjs.GetTransform().Position, gameObjs.GetTransform().scale, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+				Transform aabbTrans(aabbCentre, gameObjs.GetTransform().scale, aabbScale, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
 
 				objTrans = projection * view * aabbTrans.GetModelMtx3f();
 				GLint vTransformLoc = glGetUniformLocation(programID, "vertexTransform");
@@ -613,7 +616,7 @@ int SimpleScene_Quad::Render()
 			else if (gameObjs.colliderName == "Ritter's Sphere" || gameObjs.colliderName == "PCA Sphere") //spheres
 			{
 				float sphereScale{ gameObjs.sphereBV.m_Radius };
-				Transform sphereTrans(gameObjs.sphereBV.m_Position + gameObjs.GetTransform().Position, sphereScale, { sphereScale, sphereScale, sphereScale }, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
+				Transform sphereTrans(gameObjs.sphereBV.m_Position, sphereScale, { sphereScale, sphereScale, sphereScale }, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
 
 				objTrans = projection * view * sphereTrans.GetModelMtx();
 				GLint vTransformLoc = glGetUniformLocation(programID, "vertexTransform");
@@ -640,7 +643,15 @@ int SimpleScene_Quad::Render()
 			//else // z axis
 			//	std::sort(std::begin(BVHObjs), std::end(BVHObjs), &compareZ);
 			tree = new BVHierarchy::Node*;
-			BVHierarchy::TopDownBVTree(tree, BVHObjs, 0, BVHObjs.size() - 1, 0);
+			if (bottomUpTree)
+			{
+				BVHierarchy::BottomUpBVTree(tree, BVHObjs);
+				BVHierarchy::SetBottomUpBVTreeDepth(*tree, 0);
+			}
+			else
+			{
+				BVHierarchy::TopDownBVTree(tree, BVHObjs, 0, BVHObjs.size() - 1, 0);
+			}
 		}
 		else
 		{
@@ -734,7 +745,7 @@ int SimpleScene_Quad::Render()
 				}
 				//const char* oldBV = this->colliderName;
 				int oldTree = indexOfTreeInt;
-				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split" };
+				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split", "Bottom Up Tree" };
 				//ImGui::NextColumn();
 				ImGui::ListBox("Tree", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 3);
 				if (oldTree != indexOfTreeInt && tree != nullptr)
@@ -744,6 +755,8 @@ int SimpleScene_Quad::Render()
 					delete tree;
 					tree = nullptr;
 					newTree = true;
+					if (indexOfTreeInt == 3)
+						bottomUpTree = true;
 				}
 
 				ImGui::Text("Render Leaves");
@@ -777,7 +790,7 @@ int SimpleScene_Quad::Render()
 				}
 				ImGui::Text("Render Depth");
 				ImGui::InputInt("##RenderDepth", &renderDepth);
-				if (renderDepth > 4) renderDepth = 4;
+				if (renderDepth > 6) renderDepth = 6; //Max height is 7
 				if (renderDepth < 0) renderDepth = 0;
 				ImGui::EndTabItem();
 			}
@@ -843,18 +856,21 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 	GLint vTransformLoc = glGetUniformLocation(programID, "vertexTransform");
 	glUniformMatrix4fv(vTransformLoc, 1, GL_FALSE, &objTrans[0][0]);
 	glUniform1i(glGetUniformLocation(programID, "renderBoundingVolume"), true);
-	glm::vec3 colour = glm::vec3(1.f, 0.f, 0.f);
-
+	
+	//TreeDepth 0 Root Node
+	glm::vec3 colour = glm::vec3(1.f, 0.f, 0.f); //Red
 	if (node->treeDepth == 1)
-		colour = glm::vec3(0.f, 0.f, 1.f);
+		colour = glm::vec3(1.f, 0.5f, 1.f); //Orange
 	else if (node->treeDepth == 2)
-		colour = glm::vec3(0.f, 1.f, 1.f);
+		colour = glm::vec3(1.f, 1.f, 0.f); //Yellow
 	else if (node->treeDepth == 3)
-		colour = glm::vec3(1.f, 0.f, 1.f);
+		colour = glm::vec3(0.f, 1.f, 1.f); //Light Blue
 	else if (node->treeDepth == 4)
-		colour = glm::vec3(1.f, 1.f, 0.f);
+		colour = glm::vec3(0.f, 0.f, 1.f); //Blue
 	else if (node->treeDepth == 5)
-		colour = glm::vec3(0.75f, 0.55f, 0.75f);
+		colour = glm::vec3(1.f, 0.f, 1.f); //Pink
+	else if (node->treeDepth == 6)
+		colour = glm::vec3(0.5f, 0.5f, 0.5f); //Grey
 
 	//	colour = glm::vec3(0.f, 0.f, 1.f);
 	glUniform3f(glGetUniformLocation(programID, "renderColour"), colour.x, colour.y, colour.z);

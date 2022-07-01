@@ -50,33 +50,33 @@ namespace BVHierarchy
 	Collision::AABB ComputeBoundingVolume(std::vector<GameObject*>& objects, int startIndex, int numObjects)
 	{
 		//assert(numObjects > 0);
-		glm::vec3 Min = objects[startIndex]->transform.Position + objects[startIndex]->aabbBV.m_Min;
-		glm::vec3 Max = objects[startIndex]->transform.Position + objects[startIndex]->aabbBV.m_Max;
+		glm::vec3 Min = objects[startIndex]->aabbBV.m_Min;
+		glm::vec3 Max = objects[startIndex]->aabbBV.m_Max;
 		for (int i = startIndex + 1; i <= numObjects; ++i)
 		{
-			if (Min.x > objects[i]->transform.Position.x + objects[i]->aabbBV.m_Min.x)
-				Min.x = objects[i]->transform.Position.x + objects[i]->aabbBV.m_Min.x;
-			if (Max.x < objects[i]->transform.Position.x + objects[i]->aabbBV.m_Max.x)
-				Max.x = objects[i]->transform.Position.x + objects[i]->aabbBV.m_Max.x;
-			if (Min.y > objects[i]->transform.Position.y + objects[i]->aabbBV.m_Min.y)
-				Min.y = objects[i]->transform.Position.y + objects[i]->aabbBV.m_Min.y;
-			if (Max.y < objects[i]->transform.Position.y + objects[i]->aabbBV.m_Max.y)
-				Max.y = objects[i]->transform.Position.y + objects[i]->aabbBV.m_Max.y;
-			if (Min.z > objects[i]->transform.Position.z + objects[i]->aabbBV.m_Min.z)
-				Min.z = objects[i]->transform.Position.z + objects[i]->aabbBV.m_Min.z;
-			if (Max.z < objects[i]->transform.Position.z + objects[i]->aabbBV.m_Max.z)
-				Max.z = objects[i]->transform.Position.z + objects[i]->aabbBV.m_Max.z;
+			if (Min.x > objects[i]->aabbBV.m_Min.x)
+				Min.x = objects[i]->aabbBV.m_Min.x;
+			if (Max.x < objects[i]->aabbBV.m_Max.x)
+				Max.x = objects[i]->aabbBV.m_Max.x;
+			if (Min.y > objects[i]->aabbBV.m_Min.y)
+				Min.y = objects[i]->aabbBV.m_Min.y;
+			if (Max.y < objects[i]->aabbBV.m_Max.y)
+				Max.y = objects[i]->aabbBV.m_Max.y;
+			if (Min.z > objects[i]->aabbBV.m_Min.z)
+				Min.z = objects[i]->aabbBV.m_Min.z;
+			if (Max.z < objects[i]->aabbBV.m_Max.z)
+				Max.z = objects[i]->aabbBV.m_Max.z;
 		}
 		return Collision::AABB(Min, Max);
 	}
 
 	Collision::Sphere ComputeBoundingSphere(std::vector<GameObject*>& objects, int startIndex, int numObjects)
 	{
-		Collision::Sphere s{ objects[startIndex]->transform.Position + objects[startIndex]->sphereBV.m_Position,
+		Collision::Sphere s{ objects[startIndex]->sphereBV.m_Position,
 			objects[startIndex]->sphereBV.m_Radius };
 		for (size_t i = (size_t)startIndex + 1; i <= numObjects; ++i)
 		{
-			glm::vec3 secondPos = objects[i]->transform.Position + objects[i]->sphereBV.m_Position;
+			glm::vec3 secondPos = objects[i]->sphereBV.m_Position;
 			glm::vec3 dir = glm::normalize(secondPos - s.m_Position);
 
 			glm::vec3 edgeOfsecond = secondPos + objects[i]->sphereBV.m_Radius * dir;
@@ -357,10 +357,127 @@ namespace BVHierarchy
 		return -1; //error the extents passed in do not belong to any of the objects
 	}
 
-	//void RenderTopDownBVTree(Node** tree)
+	void BottomUpBVTree(Node** tree, std::vector<GameObject*>& objects)
+	{
+		int numObjects = objects.size();
+		assert(numObjects != 0);
+		int i, j;
+		// Allocate temporary memory for holding node pointers
+		//std::vector<Node*> pNodes{};
+		Node** tempTree = new Node*[numObjects];
+		// Form the leaf nodes for the given input objects
+		for (i = 0; i < numObjects; i++) {
+			tempTree[i] = new Node;
+			tempTree[i]->type = Node::Type::LEAF;
+			tempTree[i]->data = objects[i];
+			tempTree[i]->pos = objects[i]->transform.Position;
+			tempTree[i]->BV_AABB = objects[i]->aabbBV;
+			tempTree[i]->BV_Sphere = objects[i]->sphereBV;
+		}
+
+		auto reverseDepth = 0;
+		// Merge pairs together until just the root object left
+		while (numObjects > 1) {
+			// Find indices of the two "nearest" nodes, based on some criterion
+			FindNodesToMerge(tempTree, numObjects, &i, &j);
+			// Group nodes i and j together under a new internal node
+			Node* pPair = new Node;
+			pPair->type = Node::Type::INTERNAL;
+			pPair->lChild = tempTree[i];
+			pPair->rChild = tempTree[j];
+			pPair->treeDepth = ++reverseDepth;
+			// Compute a bounding volume for the two nodes
+			if (renderBVHSphere)
+			{
+				pPair->BV_Sphere = ComputeBoundingSphere(objects, i, j);
+			}
+			else
+			{
+				pPair->BV_AABB = ComputeBoundingVolumeAABB(tempTree[i], tempTree[j]);
+				pPair->pos = (pPair->BV_AABB.m_Min + pPair->BV_AABB.m_Max) * 0.5f; //centre of AABB
+			}
+
+			// Remove the two nodes from the active set and add in the new node.
+			// Done by putting new node at index ’min’ and copying last entry to ’max’
+			int min = i, max = j;
+			if (i > j) min = j, max = i;
+			tempTree[min] = pPair;
+			tempTree[max] = tempTree[numObjects - 1];
+			numObjects--;
+		}
+		// Free temporary storage and return root of tree
+		Node* pRoot = tempTree[0];
+		if (tempTree)
+			delete tempTree; //just delete one dimension in the array
+		*tree = pRoot;
+	}
+
+	void FindNodesToMerge(Node* nodes[], int numObjs, int* indexI, int* indexJ)
+	{
+		float minDist = FLT_MAX;
+
+		//NEAREST NEIGHBOUR
+		for (size_t i = 0; i < numObjs; ++i)
+		{
+			for (size_t j = 0; j < numObjs; ++j)
+			{
+				if (i == j) continue; //compare with every other node not itself
+				float dist = 0;
+				if (renderBVHSphere)
+				{
+					dist = glm::distance(nodes[i]->pos, nodes[j]->pos);
+				}
+				else
+				{
+					dist = glm::distance(nodes[i]->pos, nodes[j]->pos);
+				}
+				if (dist < minDist)
+				{
+					minDist = dist;
+					*indexI = i;
+					*indexJ = j;
+				}
+			}
+		}
+	}
+
+	Collision::AABB ComputeBoundingVolumeAABB(Node* first, Node* second)
+	{
+		glm::vec3 Min, Max;
+
+		Min.x = std::min(first->BV_AABB.m_Min.x,
+			second->BV_AABB.m_Min.x);
+		Max.x = std::max(first->BV_AABB.m_Max.x,
+			second->BV_AABB.m_Max.x);
+
+		Min.y = std::min(first->BV_AABB.m_Min.y,
+			second->BV_AABB.m_Min.y);
+		Max.y = std::max(first->BV_AABB.m_Max.y,
+			second->BV_AABB.m_Max.y);
+
+		Min.z = std::min(first->BV_AABB.m_Min.z,
+			second->BV_AABB.m_Min.z);
+		Max.z = std::max(first->BV_AABB.m_Max.z,
+			second->BV_AABB.m_Max.z);
+
+		return Collision::AABB(Min, Max);
+	}
+
+	//Collision::Sphere ComputeBoundingVolumeSphere(Node* first, Node* second)
 	//{
-	//	
+	//	return Collision::Sphere();
 	//}
+
+	void SetBottomUpBVTreeDepth(Node* tree, int depth)
+	{
+		if (!tree)
+			return;
+		Node* node = tree;
+		node->treeDepth = depth;
+		SetBottomUpBVTreeDepth(node->lChild, depth + 1);
+		SetBottomUpBVTreeDepth(node->rChild, depth + 1);
+	}
+
 
 }
 
