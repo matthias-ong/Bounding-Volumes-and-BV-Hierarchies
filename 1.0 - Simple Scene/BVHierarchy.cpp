@@ -364,7 +364,7 @@ namespace BVHierarchy
 		int i, j;
 		// Allocate temporary memory for holding node pointers
 		//std::vector<Node*> pNodes{};
-		Node** tempTree = new Node*[numObjects];
+		Node** tempTree = new Node * [numObjects];
 		// Form the leaf nodes for the given input objects
 		for (i = 0; i < numObjects; i++) {
 			tempTree[i] = new Node;
@@ -389,11 +389,12 @@ namespace BVHierarchy
 			// Compute a bounding volume for the two nodes
 			if (renderBVHSphere)
 			{
-				pPair->BV_Sphere = ComputeBoundingSphere(objects, i, j);
+				pPair->BV_Sphere = BtmUpComputeBoundingVolumeSphere(tempTree[i], tempTree[j]);
+				pPair->pos = pPair->BV_Sphere.m_Position; //centre of AABB
 			}
 			else
 			{
-				pPair->BV_AABB = ComputeBoundingVolumeAABB(tempTree[i], tempTree[j]);
+				pPair->BV_AABB = BtmUpComputeBoundingVolumeAABB(tempTree[i], tempTree[j]);
 				pPair->pos = (pPair->BV_AABB.m_Min + pPair->BV_AABB.m_Max) * 0.5f; //centre of AABB
 			}
 
@@ -441,7 +442,7 @@ namespace BVHierarchy
 		}
 	}
 
-	Collision::AABB ComputeBoundingVolumeAABB(Node* first, Node* second)
+	Collision::AABB BtmUpComputeBoundingVolumeAABB(Node* first, Node* second)
 	{
 		glm::vec3 Min, Max;
 
@@ -463,10 +464,29 @@ namespace BVHierarchy
 		return Collision::AABB(Min, Max);
 	}
 
-	//Collision::Sphere ComputeBoundingVolumeSphere(Node* first, Node* second)
-	//{
-	//	return Collision::Sphere();
-	//}
+	Collision::Sphere BtmUpComputeBoundingVolumeSphere(Node* first, Node* second)
+	{
+		///*
+		//Collision::Sphere s{ parent.m_Position, parent.m_Radius };
+		//glm::vec3 secondPos = lchild.m_Position;
+		//glm::vec3 dir = glm::normalize(secondPos - s.m_Position);
+		//glm::vec3 edgeOfsecond = secondPos + lchild.m_Radius * dir;
+		//BoundingVolume::GrowSphere(s, edgeOfsecond);
+
+		//secondPos = rchild.m_Position;
+		//dir = glm::normalize(secondPos - s.m_Position);
+		//edgeOfsecond = secondPos + rchild.m_Radius * dir;
+		//BoundingVolume::GrowSphere(s, edgeOfsecond);
+		//return s;
+		//*/
+		Collision::Sphere s{ first->BV_Sphere.m_Position, first->BV_Sphere.m_Radius };
+		glm::vec3 secondPos = second->BV_Sphere.m_Position;
+		glm::vec3 dir = glm::normalize(secondPos - s.m_Position);
+		glm::vec3 edgeOfsecond = secondPos + second->BV_Sphere.m_Radius * dir;
+		BoundingVolume::GrowSphere(s, edgeOfsecond);
+		
+		return s;
+	}
 
 	void SetBottomUpBVTreeDepth(Node* tree, int depth)
 	{

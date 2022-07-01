@@ -42,9 +42,9 @@ namespace BVHierarchy
 
 	void FindNodesToMerge(Node* nodes[], int numObjs, int* indexI, int* indexJ);
 
-	Collision::AABB ComputeBoundingVolumeAABB(Node* first, Node* second);
+	Collision::AABB BtmUpComputeBoundingVolumeAABB(Node* first, Node* second);
 
-	Collision::Sphere ComputeBoundingVolumeSphere(Node* first, Node* second);
+	Collision::Sphere BtmUpComputeBoundingVolumeSphere(Node* first, Node* second);
 
 	void SetBottomUpBVTreeDepth(Node* tree, int depth);
 	enum class Tree
