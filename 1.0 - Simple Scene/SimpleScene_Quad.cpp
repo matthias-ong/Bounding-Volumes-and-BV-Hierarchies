@@ -557,6 +557,7 @@ int SimpleScene_Quad::Render()
 			BVHObjs[i] = &gameObjList[i];
 			gameObjList[i].changedCollider = false;
 		}
+		BVHObjs[i] = &gameObjList[i];
 	}
 
 
@@ -690,59 +691,27 @@ int SimpleScene_Quad::Render()
 			if (ImGui::BeginTabItem("Bounding Volumes"))
 			{
 				BVHenabled = false;
-				runOnce = false;
+				//runOnce = false;
 				ImGui::Text("Render Bounding Volumes");
 				ImGui::Checkbox("##RenderBV", &renderBV);
-				ImGui::Text("Object 1");
-				ImGui::PushID(0);
-				gameObjList[0].DrawImGuiControls();
-				ImGui::PopID();
 
-				ImGui::Text("Object 2");
-				ImGui::PushID(1);
-				gameObjList[1].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 3");
-				ImGui::PushID(2);
-				gameObjList[2].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 4");
-				ImGui::PushID(3);
-				gameObjList[3].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 5");
-				ImGui::PushID(4);
-				gameObjList[4].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 6");
-				ImGui::PushID(5);
-				gameObjList[5].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 7");
-				ImGui::PushID(6);
-				gameObjList[6].DrawImGuiControls();
-				ImGui::PopID();
-
-				ImGui::Text("Object 8");
-				ImGui::PushID(7);
-				gameObjList[7].DrawImGuiControls();
-				ImGui::PopID();
-
+				for (size_t i = 0; i < gameObjList.size(); i++) //Render gameObj controls
+				{
+					ImGui::Text("Object %d", i+1);
+					ImGui::PushID(i);
+					gameObjList[i].DrawImGuiControls();
+					ImGui::PopID();
+				}
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Bounding Volume Hierarchy"))
 			{
 				BVHenabled = true;
-				if (!runOnce)
-				{
-					renderBV = false; //to see the leaf nodes rendering
-					runOnce = true;
-				}
+				//if (!runOnce)
+				//{
+				//	//renderBV = false; //to see the leaf nodes rendering
+				//	runOnce = true;
+				//}
 				//const char* oldBV = this->colliderName;
 				int oldTree = indexOfTreeInt;
 				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split", "Bottom Up Tree" };

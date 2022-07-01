@@ -66,7 +66,7 @@ private:
     bool BVHenabled;
     bool newTree = true;
     BVHierarchy::Node** tree;
-    bool renderBV = true, runOnce = false;
+    bool renderBV = true;
     int renderDepth = 0; 
     bool bottomUpTree = false;
 };
