@@ -75,4 +75,7 @@ private:
 //Externs for BVH
 extern bool renderBVHSphere;
 extern int indexOfTreeInt;
+extern float nearestNeighbourWeight;
+extern float combinedVolWeight;
+extern float relVolIncreaseWeight;
 #endif //SIMPLE_SCENE_SIMPLESCENE_QUAD_H

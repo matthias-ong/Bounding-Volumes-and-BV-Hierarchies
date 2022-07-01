@@ -13,6 +13,9 @@
 
 bool renderBVHSphere = false;
 int indexOfTreeInt = 0;
+float nearestNeighbourWeight = 0.6f;
+float combinedVolWeight = 0.3f;
+float relVolIncreaseWeight = 0.1f;
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 void SimpleScene_Quad::SetupNanoGUI(GLFWwindow* pWindow)
@@ -716,7 +719,8 @@ int SimpleScene_Quad::Render()
 				int oldTree = indexOfTreeInt;
 				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split", "Bottom Up Tree" };
 				//ImGui::NextColumn();
-				ImGui::ListBox("Tree", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 3);
+				ImGui::Text("Trees");
+				ImGui::ListBox("", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 3);
 				if (oldTree != indexOfTreeInt && tree != nullptr)
 				{
 					//new tree
@@ -761,6 +765,64 @@ int SimpleScene_Quad::Render()
 				ImGui::InputInt("##RenderDepth", &renderDepth);
 				if (renderDepth > 6) renderDepth = 6; //Max height is 7
 				if (renderDepth < 0) renderDepth = 0;
+
+				ImGui::Text("Bottom Up Heuristics Weights");
+				//ImGui::NextColumn();
+				//ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() / 5.0f);
+				
+				float oldNeighbour = nearestNeighbourWeight;
+				ImGui::Text("Nearest Neighbour");
+				ImGui::SameLine();
+				ImGui::DragFloat("##NearestNeighbour", &nearestNeighbourWeight, 0.05f, 0.0f, 1.0f, "%.1f");
+				if (oldNeighbour != nearestNeighbourWeight) //if modified change other 2 values
+				{
+					if (nearestNeighbourWeight + combinedVolWeight + relVolIncreaseWeight < 1.f)
+					{
+						combinedVolWeight = 1.f - nearestNeighbourWeight - relVolIncreaseWeight;
+						relVolIncreaseWeight = 1.f - nearestNeighbourWeight - combinedVolWeight;
+					}
+					else
+					{
+						combinedVolWeight = 0.f;
+						relVolIncreaseWeight = 0.f;
+					}
+				}
+
+				float oldcombinedVol = combinedVolWeight;
+				ImGui::Text("Min Combined Vol");
+				ImGui::SameLine();
+				ImGui::DragFloat("##CombinedVol", &combinedVolWeight, 0.05f, 0.0f, 1.0f, "%.1f");
+				if (oldcombinedVol != combinedVolWeight) //if modified change other 2 values
+				{
+					if (nearestNeighbourWeight + combinedVolWeight + relVolIncreaseWeight < 1.f)
+					{
+						nearestNeighbourWeight = 1.f - combinedVolWeight - relVolIncreaseWeight;
+						relVolIncreaseWeight = 1.f - nearestNeighbourWeight - combinedVolWeight;
+					}
+					else
+					{
+						nearestNeighbourWeight = 0.f;
+						relVolIncreaseWeight = 0.f;
+					}
+				}
+				
+				float oldrelIncrease = relVolIncreaseWeight;
+				ImGui::Text("Min Rel Increase");
+				ImGui::SameLine();
+				ImGui::DragFloat("##RelativeIncrease", &relVolIncreaseWeight, 0.05f, 0.0f, 1.0f, "%.1f");
+				if (oldrelIncrease != relVolIncreaseWeight) //if modified change other 2 values
+				{
+					if (nearestNeighbourWeight + combinedVolWeight + relVolIncreaseWeight < 1.f)
+					{
+						nearestNeighbourWeight = 1.f - combinedVolWeight - relVolIncreaseWeight;
+						combinedVolWeight = 1.f - nearestNeighbourWeight - relVolIncreaseWeight;
+					}
+					else
+					{
+						nearestNeighbourWeight = 0.f;
+						combinedVolWeight = 0.f;
+					}
+				}
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();

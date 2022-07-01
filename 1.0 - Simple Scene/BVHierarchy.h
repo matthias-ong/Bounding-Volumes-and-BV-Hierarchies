@@ -47,6 +47,13 @@ namespace BVHierarchy
 	Collision::Sphere BtmUpComputeBoundingVolumeSphere(Node* first, Node* second);
 
 	void SetBottomUpBVTreeDepth(Node* tree, int depth);
+
+	float NearestNeighbourCost(Node* nodes[], int i, int j); //returns a lower cost if nearer distance
+
+	float CombinedVolumeCost(Node* nodes[], int i, int j); //returns a lower cost if smallest volume (volume proportional to SA)
+
+	float RelativeIncreaseCost(Node* nodes[], int i, int j); //returns a lower cost if smallest relative increase
+
 	enum class Tree
 	{
 		TOP_DOWN_MEDIAN_SPLIT,

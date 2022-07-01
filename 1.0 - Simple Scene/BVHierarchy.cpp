@@ -415,26 +415,25 @@ namespace BVHierarchy
 
 	void FindNodesToMerge(Node* nodes[], int numObjs, int* indexI, int* indexJ)
 	{
-		float minDist = FLT_MAX;
-
-		//NEAREST NEIGHBOUR
+		float cheapestCombinedCost = FLT_MAX;
 		for (size_t i = 0; i < numObjs; ++i)
 		{
 			for (size_t j = 0; j < numObjs; ++j)
 			{
 				if (i == j) continue; //compare with every other node not itself
-				float dist = 0;
-				if (renderBVHSphere)
+				float combinedCost = 0;
+				float distCost = 0;
+				float combinedVolumeCost = 0;
+				float relIncreaseCost = 0;
+				distCost = NearestNeighbourCost(nodes, i, j); //NEAREST NEIGHBOUR
+				combinedVolumeCost = CombinedVolumeCost(nodes, i, j); //COMBINED VOLUME COST
+				relIncreaseCost = RelativeIncreaseCost(nodes, i, j); //RELATIVE INCREASE COST
+				combinedCost = (nearestNeighbourWeight * distCost) + (combinedVolWeight * combinedVolumeCost) +
+					(relVolIncreaseWeight * relIncreaseCost);
+
+				if (combinedCost < cheapestCombinedCost)
 				{
-					dist = glm::distance(nodes[i]->pos, nodes[j]->pos);
-				}
-				else
-				{
-					dist = glm::distance(nodes[i]->pos, nodes[j]->pos);
-				}
-				if (dist < minDist)
-				{
-					minDist = dist;
+					cheapestCombinedCost = combinedCost;
 					*indexI = i;
 					*indexJ = j;
 				}
@@ -496,6 +495,44 @@ namespace BVHierarchy
 		node->treeDepth = depth;
 		SetBottomUpBVTreeDepth(node->lChild, depth + 1);
 		SetBottomUpBVTreeDepth(node->rChild, depth + 1);
+	}
+
+	float NearestNeighbourCost(Node* nodes[], int i, int j)
+	{
+		float dist = glm::distance(nodes[i]->pos, nodes[j]->pos); //shortest distance would have least cost
+		return dist;
+	}
+
+	float CombinedVolumeCost(Node* nodes[], int i, int j)
+	{
+		if (renderBVHSphere)
+		{
+			Collision::Sphere sphere = BtmUpComputeBoundingVolumeSphere(nodes[i], nodes[j]);
+			float sphereArea = sphere.GetSurfaceArea(); //VOLUME PROPORTIONAL TO SURFACE AREA
+			return sphereArea;
+		}
+		else
+		{
+			Collision::AABB aabb = BtmUpComputeBoundingVolumeAABB(nodes[i], nodes[j]);
+			float aabbSurfaceArea = aabb.GetSurfaceArea(); //VOLUME PROPORTIONAL TO SURFACE AREA
+			return aabbSurfaceArea;
+		}
+	}
+
+	float RelativeIncreaseCost(Node* nodes[], int i, int j)
+	{
+		if (renderBVHSphere)
+		{
+			Collision::Sphere combinedSphere = BtmUpComputeBoundingVolumeSphere(nodes[i], nodes[j]);
+			float combinedSphereArea = combinedSphere.GetSurfaceArea(); //VOLUME PROPORTIONAL TO SURFACE AREA
+			return combinedSphereArea / (nodes[i]->BV_Sphere.GetSurfaceArea() + nodes[j]->BV_Sphere.GetSurfaceArea()); //Combined SA over before combined to get the relative increase
+		}
+		else
+		{
+			Collision::AABB combinedaabb = BtmUpComputeBoundingVolumeAABB(nodes[i], nodes[j]);
+			float combinedaabbSurfaceArea = combinedaabb.GetSurfaceArea(); //VOLUME PROPORTIONAL TO SURFACE AREA
+			return combinedaabbSurfaceArea / (nodes[i]->BV_AABB.GetSurfaceArea() + nodes[j]->BV_AABB.GetSurfaceArea()); //Combined SA over before combined to get the relative increase;
+		}
 	}
 
 
