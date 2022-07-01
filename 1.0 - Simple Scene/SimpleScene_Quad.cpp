@@ -695,6 +695,14 @@ int SimpleScene_Quad::Render()
 			{
 				BVHenabled = false;
 				//runOnce = false;
+				if (ImGui::Button("Update BV (After moving)"))
+				{
+					for (auto& obj : gameObjList) //Render gameObj controls
+					{
+						obj.changedCollider = true;
+					}
+				}
+
 				ImGui::Text("Render Bounding Volumes");
 				ImGui::Checkbox("##RenderBV", &renderBV);
 
@@ -705,33 +713,35 @@ int SimpleScene_Quad::Render()
 					gameObjList[i].DrawImGuiControls();
 					ImGui::PopID();
 				}
+
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Bounding Volume Hierarchy"))
 			{
 				BVHenabled = true;
-				//if (!runOnce)
-				//{
-				//	//renderBV = false; //to see the leaf nodes rendering
-				//	runOnce = true;
-				//}
-				//const char* oldBV = this->colliderName;
+				ImGui::Text("Adjust settings before clicking \"Update Tree\"");
+				if (ImGui::Button("Update Tree"))
+				{
+					if (tree != nullptr)
+					{
+						FreeTree(*tree);
+						delete tree;
+						tree = nullptr;
+					}
+					newTree = true;
+				}
 				int oldTree = indexOfTreeInt;
 				static const char* items[]{ "Top Down Median Split", "Top Down K-EVEN Extents Split", "Top Down Median Extents Split", "Bottom Up Tree" };
-				//ImGui::NextColumn();
+				ImGui::NewLine();
 				ImGui::Text("Trees");
-				ImGui::ListBox("", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 3);
+				ImGui::ListBox("", &indexOfTreeInt, items, IM_ARRAYSIZE(items), 4);
 				if (oldTree != indexOfTreeInt && tree != nullptr)
 				{
-					//new tree
-					FreeTree(*tree);
-					delete tree;
-					tree = nullptr;
-					newTree = true;
 					if (indexOfTreeInt == 3)
 						bottomUpTree = true;
+					else bottomUpTree = false;
 				}
-
+				ImGui::NewLine();
 				ImGui::Text("Render Leaves");
 				ImGui::Checkbox("##RenderBV", &renderBV);
 				bool oldBVH = renderBVHSphere;
@@ -739,12 +749,7 @@ int SimpleScene_Quad::Render()
 				ImGui::Checkbox("##RenderSphere", &renderBVHSphere);
 				if (oldBVH != renderBVHSphere && tree != nullptr)
 				{
-					//new tree
-					FreeTree(*tree);
-					delete tree;
-					tree = nullptr;
-					newTree = true;
-					if (renderBVHSphere)
+					if (renderBVHSphere) //Purpose of this is to set all the leaves into the right basic BVs
 					{
 						for (auto& x : gameObjList)
 						{
@@ -823,6 +828,7 @@ int SimpleScene_Quad::Render()
 						combinedVolWeight = 0.f;
 					}
 				}
+				
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
