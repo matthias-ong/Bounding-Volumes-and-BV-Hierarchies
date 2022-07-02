@@ -550,10 +550,29 @@ int SimpleScene_Quad::Render()
 			gameObjList[i].aabbBV = BoundingVolume::createAABB(models[gameObjList[i].GetModelID()].combinedVertices);
 			gameObjList[i].aabbBV.m_Min = gameObjList[i].transform.Position + gameObjList[i].aabbBV.m_Min;
 			gameObjList[i].aabbBV.m_Max = gameObjList[i].transform.Position + gameObjList[i].aabbBV.m_Max;
-			gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices); //default sphere for the sphere BVH leaves
+			
 			if (gameObjList[i].colliderName == "PCA Sphere")
 			{
 				gameObjList[i].sphereBV = BoundingVolume::PCASphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			}
+			else if (gameObjList[i].colliderName == "Larsson's EPOS8")
+			{
+				BoundingVolume::getCurrEPOS() = BoundingVolume::EPOS::EPOS8;
+				gameObjList[i].sphereBV = BoundingVolume::LarssonSphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			}
+			else if (gameObjList[i].colliderName == "Larsson's EPOS12")
+			{
+				BoundingVolume::getCurrEPOS() = BoundingVolume::EPOS::EPOS12;
+				gameObjList[i].sphereBV = BoundingVolume::LarssonSphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			}
+			else if (gameObjList[i].colliderName == "Larsson's EPOS24")
+			{
+				BoundingVolume::getCurrEPOS() = BoundingVolume::EPOS::EPOS24;
+				gameObjList[i].sphereBV = BoundingVolume::LarssonSphere(models[gameObjList[i].GetModelID()].combinedVertices);
+			}
+			else //RITTER'S SPHERE
+			{
+				gameObjList[i].sphereBV = BoundingVolume::RitterSphere(models[gameObjList[i].GetModelID()].combinedVertices);
 			}
 			gameObjList[i].sphereBV.m_Position = gameObjList[i].transform.Position + gameObjList[i].sphereBV.m_Position; //offset sphere position with gameobj position
 
@@ -617,7 +636,8 @@ int SimpleScene_Quad::Render()
 				//Draw
 				models["Cube"].DrawBoundingVolume();
 			}
-			else if (gameObjs.colliderName == "Ritter's Sphere" || gameObjs.colliderName == "PCA Sphere") //spheres
+			else if (gameObjs.colliderName == "Ritter's Sphere" || gameObjs.colliderName == "PCA Sphere"
+				|| gameObjs.colliderName == "Larsson's EPOS8" || gameObjs.colliderName == "Larsson's EPOS12" || gameObjs.colliderName == "Larsson's EPOS24") //spheres
 			{
 				float sphereScale{ gameObjs.sphereBV.m_Radius };
 				Transform sphereTrans(gameObjs.sphereBV.m_Position, sphereScale, { sphereScale, sphereScale, sphereScale }, { 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f });
@@ -776,7 +796,7 @@ int SimpleScene_Quad::Render()
 				//ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() / 5.0f);
 				
 				float oldNeighbour = nearestNeighbourWeight;
-				ImGui::Text("Nearest Neighbour");
+				ImGui::Text("Nearest Neighbour ");
 				ImGui::SameLine();
 				ImGui::DragFloat("##NearestNeighbour", &nearestNeighbourWeight, 0.05f, 0.0f, 1.0f, "%.1f");
 				if (oldNeighbour != nearestNeighbourWeight) //if modified change other 2 values
@@ -794,7 +814,7 @@ int SimpleScene_Quad::Render()
 				}
 
 				float oldcombinedVol = combinedVolWeight;
-				ImGui::Text("Min Combined Vol");
+				ImGui::Text("Min Combined Vol ");
 				ImGui::SameLine();
 				ImGui::DragFloat("##CombinedVol", &combinedVolWeight, 0.05f, 0.0f, 1.0f, "%.1f");
 				if (oldcombinedVol != combinedVolWeight) //if modified change other 2 values
@@ -812,7 +832,7 @@ int SimpleScene_Quad::Render()
 				}
 				
 				float oldrelIncrease = relVolIncreaseWeight;
-				ImGui::Text("Min Rel Increase");
+				ImGui::Text("Min Rel Increase ");
 				ImGui::SameLine();
 				ImGui::DragFloat("##RelativeIncrease", &relVolIncreaseWeight, 0.05f, 0.0f, 1.0f, "%.1f");
 				if (oldrelIncrease != relVolIncreaseWeight) //if modified change other 2 values

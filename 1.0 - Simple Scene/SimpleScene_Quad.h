@@ -58,9 +58,7 @@ private:
     std::map<int, const char*> intModelID; //contain all the models and their ids (indices) in int format
     std::vector<GameObject> gameObjList;
     std::map<const char*, Collision::Collider*> boundingVolume;
-    bool show_demo_window = false;
-    bool show_control_window = true;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
     std::vector<GameObject*> BVHObjs{ 8 };
     //GameObject* BVHObjs[7];
     bool BVHenabled;
@@ -75,6 +73,7 @@ private:
 //Externs for BVH
 extern bool renderBVHSphere;
 extern int indexOfTreeInt;
+
 extern float nearestNeighbourWeight;
 extern float combinedVolWeight;
 extern float relVolIncreaseWeight;

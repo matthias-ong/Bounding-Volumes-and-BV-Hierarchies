@@ -84,7 +84,7 @@ void GameObject::DrawImGuiControls()
 	transform.rotation = { 0.f, 0.f, 0.f };
 	ImGui::Columns(1);
 	const char* oldBV = this->colliderName;
-	static const char* items[]{ "AABB", "Ritter's Sphere", "PCA Sphere" };
+	static const char* items[]{ "AABB", "Ritter's Sphere", "Larsson's EPOS8",  "Larsson's EPOS12",  "Larsson's EPOS24", "PCA Sphere" };
 	//ImGui::NextColumn();
 	ImGui::ListBox("Bounding Volume", &BV_int, items, IM_ARRAYSIZE(items), 2);
 	this->colliderName = items[BV_int];

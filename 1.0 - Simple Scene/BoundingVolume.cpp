@@ -2,6 +2,21 @@
 
 namespace BoundingVolume
 {
+
+	EPOS currEPOS = EPOS::EPOS8;
+
+	constexpr std::array<glm::vec3, 4> EPOS8 =
+	{ glm::vec3{1,1,1}, glm::vec3{1,1,-1}, glm::vec3{1,-1,1}, glm::vec3{1,-1,-1} };
+
+	constexpr std::array<glm::vec3, 6> EPOS12 =
+	{ glm::vec3{ 1, 1, 0 }, glm::vec3{ 1, -1, 0 }, glm::vec3{ 1, 0, 1 }, glm::vec3{ 1, 0, -1 },
+		glm::vec3{ 0, 1, 1 }, glm::vec3{ 0, 1, -1 } };
+
+	constexpr std::array<glm::vec3, 12> EPOS24 =
+	{ glm::vec3{ 0, 1, 2 }, glm::vec3{ 0, 2, 1 }, glm::vec3{1, 0, 2 }, glm::vec3{ 2, 0, 1 },
+		glm::vec3{ 1, 2, 0 }, glm::vec3{ 2, 1, 0 },  glm::vec3{ 0, 1, -2 },  glm::vec3{0, 2, -1 },
+	 glm::vec3{1, 0, -2}, glm::vec3{ 2, 0, -1 }, glm::vec3{ 1, -2, 0 } , glm::vec3{ 2, -1, 0 } };
+
 	Collision::AABB createAABB(std::vector<glm::vec3>& vertices)
 	{
 		glm::vec3 Min = glm::vec3(FLT_MAX);
@@ -255,6 +270,65 @@ namespace BoundingVolume
 
 		return eigenSphere;
 	}
+
+	Collision::Sphere LarssonSphere(std::vector<glm::vec3>& vertices)
+	{
+		std::vector<glm::vec3> kPoints;
+		for (size_t i = 0; i < vertices.size(); i += 5) //Choose a set of K points from the entire set of points
+		{
+			kPoints.push_back(vertices[i]);
+		}
+
+		std::vector<std::pair<glm::vec3, glm::vec3>> extremePoints;
+		if (currEPOS == EPOS::EPOS8)
+		{
+			for (auto& dir : EPOS8)
+			{
+				extremePoints.emplace_back(extremePointsAlongDirection(dir, kPoints));
+			}
+		}
+		else if (currEPOS == EPOS::EPOS12)
+		{
+			for (auto& dir : EPOS12)
+			{
+				extremePoints.emplace_back(extremePointsAlongDirection(dir, kPoints));
+			}
+		}
+		else
+		{
+			for (auto& dir : EPOS24)
+			{
+				extremePoints.emplace_back(extremePointsAlongDirection(dir, kPoints));
+			}
+		}
+
+		
+
+		float greatestDist = -FLT_MAX;
+		std::pair<glm::vec3, glm::vec3> widestExtremePoint;
+		for (auto&[min, max] : extremePoints) //Structured bindings
+		{
+			float dist = glm::distance(min, max);
+			if (greatestDist < dist)
+			{
+				greatestDist = dist;
+				widestExtremePoint = { min, max };
+			}
+		}
+
+		// Set up sphere to just encompass these two points
+		glm::vec3 centre = (widestExtremePoint.first + widestExtremePoint.second) * 0.5f;
+		float radius = glm::dot(widestExtremePoint.second - centre, widestExtremePoint.second - centre);
+		radius = sqrt(radius);
+		Collision::Sphere boundingSphere{ centre,  radius };
+
+		// Grow sphere to include all points (STEP 2)
+		for (auto& v : vertices)
+			GrowSphere(boundingSphere, v);
+
+		return boundingSphere;
+	}
+
 	std::pair<float, float> getExtents(GameObject* obj, char axis, bool renderSphere)
 	{
 		std::pair<float, float> result;
@@ -295,5 +369,9 @@ namespace BoundingVolume
 			}
 		}
 		return result;
+	}
+	EPOS& getCurrEPOS()
+	{
+		return currEPOS;
 	}
 }

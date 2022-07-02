@@ -7,36 +7,23 @@ Hold down Left Mouse Button and move mouse to look around
 Mouse scroll to zoom
 Hitting the ESC key will terminate the program.
 
+After moving primitive objects in the world or making changes to the tree, remember to 
+click on the "Update" button provided.
+
 b. Any assumption that you make on how to use the application that, if violated, might 
 cause the application to fail:
 
-- There should be only 2 objects in the scene, not more or less or it may cause the application to fail.
-- Setting the scale/radius to negative.
-- Minimising the application.
+- Tree creation only works when all the primitive objects have the same type of Bounding Volumes
+- Trees construction using bounding spheres assumes Ritter's spheres only
+- Minimising the application, as I did not handle the event.
 
 c. Which part of the assignment has been completed? 
 
-Collision:
-• Sphere Vs Sphere
-• AABB Vs Sphere
-• Sphere Vs AABB
-• AABB	Vs AABB
-• Point	Vs Sphere
-• Point	Vs AABB
-• Point	Vs Triangle
-• Point	Vs Plane
-• Ray Vs Plane
-• Ray Vs AABB
-• Ray Vs Sphere
-• Ray Vs Triangle
-• Plane	Vs AABB
-• Plane	Vs Sphere
 
 Camera Implementation
 
 Extra credit:
-Displays the primitives being tested and also display details on GUI. (ImGui integration).
-Minimap implementation.
+NIL
 
 d. Which part of the assignment has NOT been completed (not done, not working, 
 etc.) and explanation on why those parts are not completed?
@@ -57,7 +44,7 @@ f. Which machine did you test your application on.
 Tested on: Windows 10, Intel Iris Plus Graphics, OpenGL 4.6, OpenGL Driver Intel Graphics Driver 30.0.101.1660
 
 g. The number of hours you spent on the assignment, on a weekly basis 
-15 hours per week.
+20 hours per week.
 
 h. Any other useful information pertaining to the application
 
