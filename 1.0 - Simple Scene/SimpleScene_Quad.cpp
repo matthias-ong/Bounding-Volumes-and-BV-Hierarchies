@@ -917,7 +917,7 @@ void SimpleScene_Quad::RenderTree(BVHierarchy::Node** tree, const glm::mat4& pro
 	//TreeDepth 0 Root Node
 	glm::vec3 colour = glm::vec3(1.f, 0.f, 0.f); //Red
 	if (node->treeDepth == 1)
-		colour = glm::vec3(1.f, 0.5f, 1.f); //Orange
+		colour = glm::vec3(1.f, 0.5f, 0.f); //Orange
 	else if (node->treeDepth == 2)
 		colour = glm::vec3(1.f, 1.f, 0.f); //Yellow
 	else if (node->treeDepth == 3)
