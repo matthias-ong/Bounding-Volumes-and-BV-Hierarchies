@@ -63,13 +63,8 @@ g. The number of hours you spent on the assignment, on a weekly basis
 
 h. Any other useful information pertaining to the application
 
-Discuss the effect of choosing the heuristic in your README 
-file. (For bottom-up tree creation)
-Increasing the weight for nearest neighbour will create a tree with clustered nodes.
-Increasing the weight for smallest combined volume will create a tree with smaller nodes
-Increasing the weight for smallest relative increase volume will create a tree that are have smaller parents when
-compared to the child.
-Playing with the weights to find an optimal tree.
+Is it possible to give feedback on how to optimise my code, especially the top down tree creation, it has a lot of sorting
+then calculating cost for every axis?
 
 Colours for Tree Depth:
 0 - Red
@@ -80,4 +75,11 @@ Colours for Tree Depth:
 5 - Pink
 6 - Grey
 
+i. Discuss the effect of choosing the heuristic in your README 
+file. (For bottom-up tree creation)
 
+Increasing the weight for nearest neighbour will create a tree with clustered nodes.
+Increasing the weight for smallest combined volume will create a tree with smaller nodes
+Increasing the weight for smallest relative increase volume will create a tree that are have smaller parents when
+compared to the child.
+Playing with the weights to find an optimal tree.
