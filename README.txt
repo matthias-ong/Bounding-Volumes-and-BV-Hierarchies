@@ -16,6 +16,8 @@ cause the application to fail:
 - Tree creation only works when all the primitive objects have the same type of Bounding Volumes
 - Trees construction using bounding spheres assumes Ritter's spheres only
 - Minimising the application, as I did not handle the event.
+- The initial positions of the objects are guaranteed to produce a working tree construction without crashing, 
+I didn't stress test putting them in various positons/inside each other, etc.
 
 c. Which part of the assignment has been completed?
 
