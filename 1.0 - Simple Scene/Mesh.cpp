@@ -27,7 +27,7 @@ void Mesh::GenericDraw()
 {
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawArrays(GL_LINES, 0, vertices.size());
+    glDrawArrays(GL_LINES, 0, (GLsizei)vertices.size());
     glBindVertexArray(0);
 
     // always good practice to set everything back to defaults once configured.
@@ -52,7 +52,7 @@ void Mesh::GenericDrawTriangle()
 {
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.size());
     glBindVertexArray(0);
 
     // always good practice to set everything back to defaults once configured.

@@ -132,6 +132,12 @@ namespace BVHierarchy
 		int split, // the index to split into left & right
 		int numObjects) // the total number of objects
 	{
+		if (numObjects == 1.f) //no child
+		{
+			Collision::Sphere leftSphere = ComputeBoundingSphere(objects, startIndex, split);
+			return leftSphere.GetSurfaceArea();
+		}
+			
 		if (renderBVHSphere)
 		{
 			Collision::Sphere leftSphere = ComputeBoundingSphere(objects, startIndex, split);
@@ -162,11 +168,11 @@ namespace BVHierarchy
 		if (indexOfTreeInt == (int)Tree::TOP_DOWN_MEDIAN_SPLIT)
 		{
 			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareX); //'X' PLANE
-			costX = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
+			costX = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2, numObjects);
 			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
-			costY = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
+			costY = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2, numObjects);
 			std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareZ); //'Z' PLANE
-			costZ = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2.f, numObjects);
+			costZ = GetHeuristicCost(objects, startIndex, startIndex + numObjects / 2, numObjects);
 
 			if (costX < costY && costX < costZ)
 			{
@@ -177,7 +183,7 @@ namespace BVHierarchy
 				std::sort(std::begin(objects) + startIndex, std::begin(objects) + endIndex + 1, &compareY); //'Y' PLANE
 			}
 			// else already sorted in z axis
-			return startIndex + numObjects / 2.f; //MEDIAN SPLIT
+			return startIndex + numObjects / 2; //MEDIAN SPLIT
 		}
 		else if (indexOfTreeInt == (int)Tree::TOP_DOWN_K_EVEN_SPLIT)
 		{
@@ -231,7 +237,7 @@ namespace BVHierarchy
 				extents.emplace_back(extent.second);
 			}
 			//Find index of the gameObj with that extent
-			indexX = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'x', renderBVHSphere);
+			indexX = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2], startIndex, endIndex, 'x', renderBVHSphere);
 			costX = GetHeuristicCost(objects, startIndex, indexX, numObjects);
 
 			extents.clear();
@@ -242,7 +248,7 @@ namespace BVHierarchy
 				extents.emplace_back(extent.first);
 				extents.emplace_back(extent.second);
 			}
-			indexY = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'y', renderBVHSphere);
+			indexY = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2], startIndex, endIndex, 'y', renderBVHSphere);
 			costY = GetHeuristicCost(objects, startIndex, indexY, numObjects);
 
 			extents.clear();
@@ -253,7 +259,7 @@ namespace BVHierarchy
 				extents.emplace_back(extent.first);
 				extents.emplace_back(extent.second);
 			}
-			indexZ = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2.f], startIndex, endIndex, 'z', renderBVHSphere);
+			indexZ = FindIndexWithExtents(objects, extents[(extents.size() - 1) / 2], startIndex, endIndex, 'z', renderBVHSphere);
 			costZ = GetHeuristicCost(objects, startIndex, indexZ, numObjects);
 
 			if (costX < costY && costX < costZ)
@@ -269,6 +275,7 @@ namespace BVHierarchy
 			// else already sorted in z axis
 			return indexZ;
 		}
+		else return -1;
 	}
 
 	Collision::Sphere RecomputeParentSphere(Collision::Sphere& parent, Collision::Sphere& lchild, Collision::Sphere& rchild)
@@ -359,7 +366,7 @@ namespace BVHierarchy
 
 	void BottomUpBVTree(Node** tree, std::vector<GameObject*>& objects)
 	{
-		int numObjects = objects.size();
+		int numObjects = (int)objects.size();
 		assert(numObjects != 0);
 		int i, j;
 		// Allocate temporary memory for holding node pointers
@@ -416,9 +423,9 @@ namespace BVHierarchy
 	void FindNodesToMerge(Node* nodes[], int numObjs, int* indexI, int* indexJ)
 	{
 		float cheapestCombinedCost = FLT_MAX;
-		for (size_t i = 0; i < numObjs; ++i)
+		for (int i = 0; i < numObjs; ++i)
 		{
-			for (size_t j = 0; j < numObjs; ++j)
+			for (int j = 0; j < numObjs; ++j)
 			{
 				if (i == j) continue; //compare with every other node not itself
 				float combinedCost = 0;
@@ -434,8 +441,8 @@ namespace BVHierarchy
 				if (combinedCost < cheapestCombinedCost)
 				{
 					cheapestCombinedCost = combinedCost;
-					*indexI = i;
-					*indexJ = j;
+					*indexI = (int)i;
+					*indexJ = (int)j;
 				}
 			}
 		}
